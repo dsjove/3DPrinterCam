@@ -38,7 +38,7 @@ Unused right now but will enable wifi and time configuration
 
 We will want a web server that can serve the files, display last taken picture, and camera configuration
 
-
+![Hardware](Hardware.jepg)
 
 
 
