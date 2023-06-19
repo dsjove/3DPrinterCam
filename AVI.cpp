@@ -219,6 +219,7 @@ void AVI::open() {
   {
     close();
   }
+  memcpy(aviHeader, aviHeaderTemplate, AVI_HEADER_LEN);
   dateFormat(partName, sizeof(partName), true);
   SD_MMC.mkdir(partName); // make date folder if not present
   dateFormat(partName, sizeof(partName), false);
