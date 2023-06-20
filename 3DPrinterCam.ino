@@ -10,18 +10,15 @@ AVI avi;
 void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
-  if (camera.setup() != 0)
-  {
+  if (camera.setup() != 0) {
     Serial.println("Camera Setup Fail");
     return;
   }
-  if (storage.setup() != 0)
-  {
+  if (storage.setup() != 0) {
     Serial.println("Storage Setup Fail");
     return;
   }
-  if (avi.setup(camera.frameSize()) != 0)
-  {
+  if (avi.setup(camera.frameSize()) != 0) {
     Serial.println("AVI Setup Fail");
     return;
   }
@@ -29,21 +26,18 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available())
-  {
+  if (Serial.available()) {
+    //TODO: is this the best way to parse the commands?
     String command = Serial.readStringUntil('\n');
-    if (command.indexOf("snapbegin") != -1)
-    {
+    if (command.indexOf("snapbegin") != -1) {
       Serial.println("snapbegin");
       avi.open();
     }
-    else if (command.indexOf("snaplayer") != -1)
-    {
+    else if (command.indexOf("snaplayer") != -1) {
       Serial.println("snaplayer");
       avi.record(camera.processFrame());
     }
-    else if (command.indexOf("snapend") != -1)
-    {
+    else if (command.indexOf("snapend") != -1) {
       Serial.println("snapend");
       avi.close();
     }

@@ -3,22 +3,11 @@
 #include <exception>
 #include <HardwareSerial.h>
 
-Camera::Camera()
-{
+Camera::Camera() {
 }
 
-void setupLedFlash(int pin) 
-{
-    #if CONFIG_LED_ILLUMINATOR_ENABLED
-    ledcSetup(LED_LEDC_CHANNEL, 5000, 8);
-    ledcAttachPin(pin, LED_LEDC_CHANNEL);
-    #else
-    log_i("LED flash is disabled -> CONFIG_LED_ILLUMINATOR_ENABLED = 0");
-    #endif
-}
-
-int Camera::setup()
-{
+int Camera::setup() {
+  uint8_t xclkMhz = 20; // camera clock rate MHz
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -38,58 +27,74 @@ int Camera::setup()
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
-  config.frame_size = FRAMESIZE_UXGA;
-  config.pixel_format = PIXFORMAT_JPEG; // for streaming
-  //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
-  config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  config.xclk_freq_hz = xclkMhz * 1000000;
+  config.pixel_format = PIXFORMAT_JPEG;
+  config.grab_mode = CAMERA_GRAB_LATEST;
+  // init with high specs to pre-allocate larger buffers
   config.fb_location = CAMERA_FB_IN_PSRAM;
-  config.jpeg_quality = 12;
-  config.fb_count = 1;
-  
-  // if PSRAM IC present, init with UXGA resolution and higher JPEG quality
-  //                      for larger pre-allocated frame buffer.
-  if(config.pixel_format == PIXFORMAT_JPEG){
-    if(psramFound()){
-      config.jpeg_quality = 10;
-      config.fb_count = 2;
-      config.grab_mode = CAMERA_GRAB_LATEST;
-    } else {
-      // Limit the frame size when PSRAM is not available
-      config.frame_size = FRAMESIZE_SVGA;
-      config.fb_location = CAMERA_FB_IN_DRAM;
-    }
-  } else {
-    // Best option for face detection/recognition
-    config.frame_size = FRAMESIZE_240X240;
 #if CONFIG_IDF_TARGET_ESP32S3
-    config.fb_count = 2;
-#endif
-  }
+  config.frame_size = FRAMESIZE_QSXGA; // 8M
+#else
+  config.frame_size = FRAMESIZE_UXGA;  // 4M
+#endif  
+  config.jpeg_quality = 10;
+  config.fb_count = 4;
 
 #if defined(CAMERA_MODEL_ESP_EYE)
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
 #endif
-
   // camera init
-  esp_err_t err = esp_camera_init(&config);
-  if (err != ESP_OK) 
-  {
-    return err;
-  }
+  if (psramFound()) {
+    esp_err_t err = ESP_FAIL;
+    uint8_t retries = 2;
+    while (retries && err != ESP_OK) {
+      err = esp_camera_init(&config);
+      if (err != ESP_OK) {
+        // power cycle the camera, provided pin is connected
+        digitalWrite(PWDN_GPIO_NUM, 1);
+        delay(100);
+        digitalWrite(PWDN_GPIO_NUM, 0); 
+        delay(100);
+        retries--;
+      }
+    } 
+    if (err != ESP_OK) {
+      return err;
+    }
+    sensor_t * s = esp_camera_sensor_get();
+    /*
+    char camModel[10];
+    switch (s->id.PID) {
+      case (OV2640_PID):
+        strcpy(camModel, "OV2640");
+      break;
+      case (OV3660_PID):
+        strcpy(camModel, "OV3660");
+      break;
+      case (OV5640_PID):
+        strcpy(camModel, "OV5640");
+      break;
+      default:
+        strcpy(camModel, "Other");
+      break;
+    }
+    LOG_INF("Camera init OK for model %s on board %s", camModel, CAM_BOARD);
+    */
+    // model specific corrections
+    if (s->id.PID == OV3660_PID) {
+      // initial sensors are flipped vertically and colors are a bit saturated
+      s->set_vflip(s, 1);//flip it back
+      s->set_brightness(s, 1);//up the brightness just a bit
+      s->set_saturation(s, -2);//lower the saturation
+    }
+    //drop down frame size for higher initial frame rate
+    s->set_framesize(s, FRAMESIZE_SVGA);
 
-  sensor_t * s = esp_camera_sensor_get();
-  // initial sensors are flipped vertically and colors are a bit saturated
-  if (s->id.PID == OV3660_PID) {
-    s->set_vflip(s, 1); // flip it back
-    s->set_brightness(s, 1); // up the brightness just a bit
-    s->set_saturation(s, -2); // lower the saturation
-  }
-  // drop down frame size for higher initial frame rate
-  if(config.pixel_format == PIXFORMAT_JPEG){
-    s->set_framesize(s, FRAMESIZE_QVGA);
-  }
+#if defined(CAMERA_MODEL_M5STACK_WIDE)
+    s->set_vflip(s, 1);
+    s->set_hmirror(s, 1);
+#endif
 
 #if defined(CAMERA_MODEL_M5STACK_WIDE) || defined(CAMERA_MODEL_M5STACK_ESP32CAM)
   s->set_vflip(s, 1);
@@ -99,22 +104,16 @@ int Camera::setup()
 #if defined(CAMERA_MODEL_ESP32S3_EYE)
   s->set_vflip(s, 1);
 #endif
-
-// Setup LED FLash if LED pin is defined in camera_pins.h
-#if defined(LED_GPIO_NUM)
-  setupLedFlash(LED_GPIO_NUM);
-#endif
+  }
+  debugMemory("prepCam");
   return 0;
 }
 
-framesize_t Camera::frameSize()
-{
+framesize_t Camera::frameSize() {
   sensor_t * s = esp_camera_sensor_get();
   return s->status.framesize; 
 }
 
-camera_fb_t* Camera::processFrame() 
-{
-  camera_fb_t* fb = esp_camera_fb_get();
-  return fb;
+camera_fb_t* Camera::processFrame()  {
+  return esp_camera_fb_get();
 }

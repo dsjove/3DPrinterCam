@@ -1,7 +1,6 @@
 #include "esp_camera.h"
 
-class Camera 
-{
+class Camera {
   public:
     Camera();
     int setup();

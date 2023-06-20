@@ -18,19 +18,20 @@ That project does a lot more than what we need and not exactly what we need.
 ## Code Status:
 
 ### PrinterCam.nio
-The serial reads for the commands are fine for protoype but need to be more robust
+TODO: serial reads for the commands are fine for protoype but should be more robust
 
 ### Globals.h/cpp camera_pins.h
 Junk Drawer. This is where the hardware defines reside.
 
 ### Camera.h/cpp
-At some point in the future we will need to expose camera properties for custom config.
+TODO: expose camera settings and flash for external control
 
 ### Storage.h/cpp
-At some point in the future we will need to read files to web server. Needs some code cleanup.
+TODO: test other things than just the SD Card
+TODO: file listing for web
 
 ### AVI.h/cpp
-Close AVI crashes :-( Code can still use a bit of cleanup.
+TODO: max frames compare fails
 
 ### WifiConnection.h/cpp
 Unused right now. Will enable wifi and time configuration.

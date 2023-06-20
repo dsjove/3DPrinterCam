@@ -3,13 +3,11 @@
 
 WifiConnection* WifiConnection::singleton = NULL;
 
-WifiConnection::WifiConnection()
-{
+WifiConnection::WifiConnection() {
   singleton = this;
 }
 
-int WifiConnection::setup()
-{
+int WifiConnection::setup() {
   return startWifi(true) ? 0 : 1;
 }
 

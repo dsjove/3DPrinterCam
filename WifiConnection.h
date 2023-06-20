@@ -1,8 +1,7 @@
 #include <WiFi.h>
 #include "ping/ping_sock.h"
 
-class WifiConnection
-{
+class WifiConnection {
   public:
     WifiConnection();
     int setup();

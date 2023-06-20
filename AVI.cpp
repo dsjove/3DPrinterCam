@@ -205,6 +205,9 @@ static const FrameStruct frameData[] = {
   {"QSXGA", 2560, 1920, 4, 4, 1}
 };
 
+AVI::AVI() {
+}
+
 int AVI::setup(framesize_t frameSize)
 {
   fsizePtr = frameSize; 
@@ -212,31 +215,23 @@ int AVI::setup(framesize_t frameSize)
   return 0;
 }
 
-#define FILE_EXT "avi"
 #define TLTEMP "/current.tl"
+
 void AVI::open() {
-  if (frameCntTL > 0)
-  {
-    close();
-  }
+  //if (frameCntTL > 0) {
+  //  close();
+ // }
   memcpy(aviHeader, aviHeaderTemplate, AVI_HEADER_LEN);
-  dateFormat(partName, sizeof(partName), true);
-  SD_MMC.mkdir(partName); // make date folder if not present
-  dateFormat(partName, sizeof(partName), false);
-  int tlen = snprintf(TLname, FILE_NAME_LEN - 1, "%s_%s_%u.%s", 
-    partName, frameData[fsizePtr].frameSizeStr, tlPlaybackFPS, FILE_EXT);
-  if (tlen > FILE_NAME_LEN - 1);// LOG_WRN("file name truncated");
   if (SD_MMC.exists(TLTEMP)) SD_MMC.remove(TLTEMP);
   tlFile = SD_MMC.open(TLTEMP, FILE_WRITE);
   tlFile.write(aviHeader, AVI_HEADER_LEN); // space for header
   prepAviIndex();
-  //LOG_INF("Started time lapse file %s, duration %u mins, for %u frames",  TLname, tlDurationMins, requiredFrames);
   frameCntTL = 1;
 }
 
 bool AVI::record(camera_fb_t* fb) {
   if (!fb) return false;
-  if (frameCntTL == 0) {    
+  if (frameCntTL == 0) {   
     open();
   }
   uint8_t hdrBuff[CHUNK_HDR];
@@ -250,12 +245,20 @@ bool AVI::record(camera_fb_t* fb) {
   buildAviIdx(jpegSize, true); // save avi index for frame
   frameCntTL++;
   if (frameCntTL > maxFrames) {
-    close();
+    //close();
   }
 }
 
 bool AVI::close() {
-  Serial.println("Close");
+  if (frameCntTL <= 0) {
+    return true;
+  }
+  if (frameCntTL == 1) {
+    SD_MMC.remove(TLTEMP);
+    frameCntTL = 0;
+    return true;
+  }
+  Serial.println("closing");
   buildAviHdr(tlPlaybackFPS, fsizePtr, --frameCntTL);
   // add index
   finalizeAviIndex(frameCntTL);
@@ -268,7 +271,14 @@ bool AVI::close() {
   tlFile.seek(0, SeekSet); // start of file
   tlFile.write(aviHeader, AVI_HEADER_LEN);
   tlFile.close(); 
+
+  #define FILE_NAME_LEN 64
+  char partName[FILE_NAME_LEN] = "";
+  char TLname[FILE_NAME_LEN] = "";
+  dateFormat(partName, sizeof(partName), true);
+  SD_MMC.mkdir(partName); // make date folder if not present
+  dateFormat(partName, sizeof(partName), false);
+  snprintf(TLname, FILE_NAME_LEN - 1, "%s_%s_%u_%u.%s", partName, frameData[fsizePtr].frameSizeStr, tlPlaybackFPS, frameCntTL, "avi");
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;
-  //LOG_DBG("Finished time lapse");
 }
