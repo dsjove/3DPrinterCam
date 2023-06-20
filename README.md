@@ -50,6 +50,14 @@ TODO: implement
 
 ![Hardware](Hardware.jpeg)
 
+My shopping list:\
+[ESP32-Cam](https://www.amazon.com/dp/B0948ZFTQZ?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
+Any micro SD Card\
+[Power Adaptor](https://www.amazon.com/dp/B003HHK576?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
+[USB-A to USB-C](https://www.amazon.com/dp/B09SZ5NHF4?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
+[USB-Mini to USB-Micro](https://www.amazon.com/dp/B08FRNCQXP?psc=1&ref=ppx_yo2ov_dt_b_product_details)
+
+
 
 
 
