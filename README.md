@@ -5,7 +5,7 @@ I have recently purchased a Prusa MK4 printer. It does not have a camera. I do n
 
 The ESP32-CAM is a very capable self-contained Arduino WIFI-enabled camera. The camera may be purchased from many vendors. It runs about 10 US$, including a USB-TTL Serial (USB) Adapter Module. There are many excellent YouTube videos to take you through setting up the camera for development.
 
-The MK4 does not provide power from its USB-C port. If your printer will not supply 5V then you will need a USB Y Cable designed to supply supplimental power from the extra plug.
+The MK4 does not provide power from its USB-C port. If your printer will not supply 5V then you will need a USB Y Cable designed to supply supplimental power from the extra plug. There may be other ways to pull the power from the MK4 board.
 
 You will need to modify your printer slicer settings so the printer can command the camera. There may be ideal GCODE pause commands.
 - `M118 snapbegin` to begin
@@ -17,9 +17,10 @@ That project does a lot more than what we need and not exactly what we need. Des
 
 ## Code Status:
 
-### PrinterCam.nio
+### 3DPrinterCam.nio
 This is the main entry point into the program. The only buxsiness logic is parsing the serial commands.\
 TODO: serial reads for the commands are fine for protoype but should be more robust
+TODO: eliminate 'begin' and pass GCODE file name as part of other commands (use date if not supplied)
 
 ### Globals.h/cpp camera_pins.h
 Junk Drawer. This is where the hardware defines reside.\
@@ -38,35 +39,27 @@ TODO: file(s) access for CamServer
 Saves captures as timelapsed AVI moview files
 TODO: max frames compare fails\
 TODO: tune FPS\
-TODO: save last capture as single file
+TODO: save last capture as single file\
+TODO: auto close on timer\
+TODO: use file name as begin/end markers
 
 ### WifiConnection.h/cpp
 WIIFI and Time setup\
 TODO: use
 
 ### CamServer
-Restfule web server for files and remote control. No need for HTML.\
+Restful web server for files and remote control. No need for HTML.\
 TODO: implement
 
+## Images
 ![Hardware](Hardware.jpeg)
 
-My shopping list:\
+## 3D Printed Components
+[Self Promotion](https://www.printables.com/@Jove/models)
+
+## My shopping list:
 [ESP32-Cam](https://www.amazon.com/dp/B0948ZFTQZ?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
 Any micro SD Card\
 [Power Adaptor](https://www.amazon.com/dp/B003HHK576?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
 [USB-A to USB-C](https://www.amazon.com/dp/B09SZ5NHF4?psc=1&ref=ppx_yo2ov_dt_b_product_details)\
 [USB-Mini to USB-Micro](https://www.amazon.com/dp/B08FRNCQXP?psc=1&ref=ppx_yo2ov_dt_b_product_details)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
