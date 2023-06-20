@@ -21,6 +21,7 @@ That project does a lot more than what we need and not exactly what we need. Des
 This is the main entry point into the program. The only buxsiness logic is parsing the serial commands.\
 TODO: serial reads for the commands are fine for protoype but should be more robust
 TODO: eliminate 'begin' and pass GCODE file name as part of other commands (use date if not supplied)
+TODO: esp_camera_fb_return
 
 ### Globals.h/cpp camera_pins.h
 Junk Drawer. This is where the hardware defines reside.\
