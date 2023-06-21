@@ -243,6 +243,11 @@ bool AVI::record(camera_fb_t* fb) {
   tlFile.write(hdrBuff, CHUNK_HDR); // jpeg frame details
   tlFile.write(fb->buf, jpegSize);
   buildAviIdx(jpegSize, true); // save avi index for frame
+
+  //File last = SD_MMC.open("/last.jpg", FILE_WRITE);
+  //last.write(fb->buf, fb->len);
+  //last.close();
+
   frameCntTL++;
   if (frameCntTL > maxFrames) {
     //close();

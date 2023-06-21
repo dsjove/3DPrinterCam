@@ -35,7 +35,9 @@ void loop() {
     }
     else if (command.indexOf("snaplayer") != -1) {
       Serial.println("snaplayer");
-      avi.record(camera.processFrame());
+      camera_fb_t* fb = camera.processFrame();
+      avi.record(fb);
+      esp_camera_fb_return(fb);
     }
     else if (command.indexOf("snapend") != -1) {
       Serial.println("snapend");
