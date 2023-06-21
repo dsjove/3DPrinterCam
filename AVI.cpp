@@ -216,6 +216,7 @@ int AVI::setup(framesize_t frameSize)
 }
 
 #define TLTEMP "/current.tl"
+#define LASTJPG "/last.jpg"
 
 void AVI::open() {
   //if (frameCntTL > 0) {
@@ -244,9 +245,10 @@ bool AVI::record(camera_fb_t* fb) {
   tlFile.write(fb->buf, jpegSize);
   buildAviIdx(jpegSize, true); // save avi index for frame
 
-  //File last = SD_MMC.open("/last.jpg", FILE_WRITE);
-  //last.write(fb->buf, fb->len);
-  //last.close();
+  if (SD_MMC.exists(LASTJPG)) SD_MMC.remove(LASTJPG);
+  last = SD_MMC.open(LASTJPG, FILE_WRITE);
+  last.write(fb->buf, fb->len);
+  last.close();
 
   frameCntTL++;
   if (frameCntTL > maxFrames) {

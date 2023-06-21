@@ -39,5 +39,6 @@ class AVI {
     uint8_t fsizePtr = 0; // index to frameData[] for record
     int frameCntTL = 0;
     File tlFile;
+    File last;
     uint8_t FPS = 0;
 };

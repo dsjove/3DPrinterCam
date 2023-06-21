@@ -39,7 +39,6 @@ TODO: file(s) access for CamServer
 Saves captures as timelapsed AVI moview files
 TODO: max frames compare fails\
 TODO: tune FPS\
-TODO: save last capture as single file\
 TODO: auto close on timer\
 TODO: use file name as begin/end markers
 
