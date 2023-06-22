@@ -1,4 +1,4 @@
-#include <string.h>
+#pragma once
 #include <stdint.h>
 #include "esp_camera.h"
 #include <SD_MMC.h>
@@ -6,7 +6,7 @@
 class AVI {
   public:
     AVI();
-    int setup(framesize_t frameSize);
+    void setup(framesize_t frameSize);
     void open();
     bool record(camera_fb_t* fb);
     bool close();

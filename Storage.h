@@ -1,14 +1,11 @@
-#include <string>
+#pragma once
+#include <stdint.h>
+
+struct AppHardware;
 
 class Storage {
   public:
-    struct Stats {
-        std::string type;
-        uint64_t physicalSize;
-        uint64_t totalBytes;
-        uint64_t usedBytes;
-    };
     Storage();
-    int setup();
-    Stats stats();
+    void setup(AppHardware& hardware);
+    uint64_t freeSpace();
 };

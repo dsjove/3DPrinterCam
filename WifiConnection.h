@@ -1,3 +1,4 @@
+#pragma once
 #include <WiFi.h>
 #include "ping/ping_sock.h"
 

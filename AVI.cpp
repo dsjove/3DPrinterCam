@@ -1,5 +1,6 @@
 #include "AVI.h"
 #include "Globals.h"
+#include "esp_timer.h"
 
 /* 
 Generate AVI format for recorded videos
@@ -208,11 +209,9 @@ static const FrameStruct frameData[] = {
 AVI::AVI() {
 }
 
-int AVI::setup(framesize_t frameSize)
-{
+void AVI::setup(framesize_t frameSize) {
   fsizePtr = frameSize; 
   FPS = frameData[fsizePtr].defaultFPS;
-  return 0;
 }
 
 #define TLTEMP "/current.tl"
@@ -289,3 +288,57 @@ bool AVI::close() {
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;
 }
+/*
+TaskHandle_t captureHandle = NULL;
+volatile bool isPlaying = false;
+SemaphoreHandle_t playbackSemaphore = xSemaphoreCreateBinary();
+uint16_t frameInterval = 0;//10000 / FPS;
+
+static void IRAM_ATTR frameISR() {
+  // interrupt at current frame rate
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(captureHandle, &xHigherPriorityTaskWoken); // wake capture task to process frame
+  if (isPlaying) xSemaphoreGiveFromISR (playbackSemaphore, &xHigherPriorityTaskWoken ); // notify playback to send frame
+  if (xHigherPriorityTaskWoken == pdTRUE) portYIELD_FROM_ISR();
+}
+
+void controlFrameTimer(bool restartTimer) {
+  // frame timer control, timer3 so dont conflict with cam
+  static hw_timer_t* timer3 = NULL;
+  // stop current timer
+  if (timer3) {
+    timerAlarmDisable(timer3);   
+    timerDetachInterrupt(timer3); 
+    timerEnd(timer3);
+  }
+  if (restartTimer) {
+    // (re)start timer 3 interrupt per required framerate
+    timer3 = timerBegin(3, 8000, true); // 0.1ms tick
+    frameInterval = 0;//10000 / FPS; // in units of 0.1ms 
+    //LOG_DBG("Frame timer interval %ums for FPS %u", frameInterval/10, FPS); 
+    timerAlarmWrite(timer3, frameInterval, true); 
+    timerAlarmEnable(timer3);
+    timerAttachInterrupt(timer3, &frameISR, true);
+  }
+}
+
+static void deleteTask(TaskHandle_t thisTaskHandle) {
+  if (thisTaskHandle != NULL) vTaskDelete(thisTaskHandle);
+  thisTaskHandle = NULL;
+}
+
+void endTasks() {
+  deleteTask(captureHandle);
+}
+
+void OTAprereq() {
+  // stop timer isrs, and free up heap space, or crashes esp32
+  controlFrameTimer(false);
+  endTasks();
+}
+
+
+static void startOTAserver() {
+  OTAprereq();
+}
+*/

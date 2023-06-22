@@ -5,37 +5,19 @@
 Storage::Storage() {
 }
 
-Storage::Stats Storage::stats() {
-  Storage::Stats stats;
+uint64_t Storage::freeSpace() {
 #ifdef INCLUDE_SD
-  uint8_t cardType = SD_MMC.cardType();
-  switch (SD_MMC.cardType()) {
-    case CARD_NONE:
-      return stats;
-    case CARD_MMC:
-      stats.type = "MMC";
-      break;
-    case CARD_SD:
-      stats.type = "SDSC";
-      break;
-    case CARD_SDHC:
-      stats.type = "SDHC";
-      break;
-  }
-  stats.physicalSize = SD_MMC.cardSize() / ONEMEG;
-  stats.totalBytes = SD_MMC.totalBytes() / ONEMEG;
-  stats.usedBytes = SD_MMC.usedBytes() / ONEMEG;
+  return SD_MMC.usedBytes() / ONEMEG;
 #endif
 #ifdef _SPIFFS_H_
-  stats.type = "SPIFFS";
+  return 0;
 #endif
 #ifdef _LITTLEFS_H_
-  stats.type = "LittleFS";
+  return 0;
 #endif
-  return stats;
 }
 
-int Storage::setup() {
+void Storage::setup(AppHardware& hardware) {
   bool formatIfMountFailed = true;
 #ifdef INCLUDE_SD  
   if ((fs::SDMMCFS*)&STORAGE == &SD_MMC) {
@@ -53,32 +35,49 @@ int Storage::setup() {
     if (psramFound()) heap_caps_malloc_extmem_enable(4096);
 #if CONFIG_IDF_TARGET_ESP32S3
 #if !defined(SD_MMC_CLK)
-    return 1;
+    return;
 #endif
     SD_MMC.setPins(SD_MMC_CLK, SD_MMC_CMD, SD_MMC_D0);
 #endif
     bool res = SD_MMC.begin("/sdcard", true, formatIfMountFailed);
     if (res == false) {
-      return 1;
+      return;
     }
+    uint8_t cardType = SD_MMC.cardType();
+    switch (SD_MMC.cardType()) {
+      case CARD_NONE:
+        return;
+      case CARD_MMC:
+        hardware.storageType = "MMC";
+        break;
+      case CARD_SD:
+        hardware.storageType = "SDSC";
+        break;
+      case CARD_SDHC:
+        hardware.storageType = "SDHC";
+        break;
+    }
+    hardware.physicalSize = SD_MMC.cardSize() / ONEMEG;
+    hardware.totalBytes = SD_MMC.totalBytes() / ONEMEG;
 #if defined(CAMERA_MODEL_AI_THINKER)
     pinMode(4, OUTPUT);
     digitalWrite(4, 0); // set lamp pin fully off as sd_mmc library still initialises pin 4 in 1 line mode
 #endif
-    return 0;
+    return;
 #endif
   }
 #ifdef _SPIFFS_H_
   if ((fs::SPIFFSFS*)&STORAGE == &SPIFFS) {
+    hardware.storageType = "SPIFFS";
     res = SPIFFS.begin(formatIfMountFailed);
-    return res ? 0 : 1;
+    return;
   }
 #endif
 #ifdef _LITTLEFS_H_
   if ((fs::LittleFSFS*)&STORAGE == &LittleFS) {
+    hardware.storageType = "LittleFS";
     res = LittleFS.begin(formatIfMountFailed);
-    return res ? 0 : 1;
+    return;
   }
 #endif
-  return 1;
 }

@@ -6,9 +6,15 @@
 Camera::Camera() {
 }
 
-int Camera::setup() {
-  uint8_t xclkMhz = 20; // camera clock rate MHz
+void Camera::setup(AppHardware& hardware) {
   camera_config_t config;
+  ::memset(&config, 0, sizeof(config));
+  assignPins(config);
+  initCam(config, hardware);
+}
+
+void Camera::assignPins(camera_config_t& config) {
+  uint8_t xclkMhz = 20; // camera clock rate MHz
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
@@ -44,6 +50,9 @@ int Camera::setup() {
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
 #endif
+}
+
+void Camera::initCam(camera_config_t& config, AppHardware& hardware) {
   // camera init
   if (psramFound()) {
     esp_err_t err = ESP_FAIL;
@@ -60,27 +69,23 @@ int Camera::setup() {
       }
     } 
     if (err != ESP_OK) {
-      return err;
+      return;
     }
     sensor_t * s = esp_camera_sensor_get();
-    /*
-    char camModel[10];
     switch (s->id.PID) {
       case (OV2640_PID):
-        strcpy(camModel, "OV2640");
-      break;
+        hardware.cameraModel = "OV2640";
+        break;
       case (OV3660_PID):
-        strcpy(camModel, "OV3660");
-      break;
+        hardware.cameraModel = "OV3660";
+        break;
       case (OV5640_PID):
-        strcpy(camModel, "OV5640");
-      break;
+        hardware.cameraModel = "OV5640";
+        break;
       default:
-        strcpy(camModel, "Other");
-      break;
+        hardware.cameraModel = "Other";
+        break;
     }
-    LOG_INF("Camera init OK for model %s on board %s", camModel, CAM_BOARD);
-    */
     // model specific corrections
     if (s->id.PID == OV3660_PID) {
       // initial sensors are flipped vertically and colors are a bit saturated
@@ -105,8 +110,6 @@ int Camera::setup() {
   s->set_vflip(s, 1);
 #endif
   }
-  debugMemory("prepCam");
-  return 0;
 }
 
 framesize_t Camera::frameSize() {

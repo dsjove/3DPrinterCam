@@ -1,27 +1,22 @@
-#include "Camera.h"
 #include "Storage.h"
+#include "Camera.h"
 #include "AVI.h"
+#include "WIFIConnection.h"
+#include "Globals.h"
 #include <HardwareSerial.h>
 
-Camera camera;
+AppHardware hardware;
 Storage storage;
+Camera camera;
 AVI avi;
 
 void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
-  if (camera.setup() != 0) {
-    Serial.println("Camera Setup Fail");
-    return;
-  }
-  if (storage.setup() != 0) {
-    Serial.println("Storage Setup Fail");
-    return;
-  }
-  if (avi.setup(camera.frameSize()) != 0) {
-    Serial.println("AVI Setup Fail");
-    return;
-  }
+  storage.setup(hardware);
+  camera.setup(hardware);
+  Serial.println(hardware.toString());
+  avi.setup(camera.frameSize());
   Serial.println("Running");
 }
 
