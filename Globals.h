@@ -14,12 +14,26 @@
 #define CAM_BOARD "OTHER"
 #endif
 
+#if defined(CAMERA_MODEL_ESP32S3_EYE)
+// pins configured for SD card on this camera board
+#define SD_MMC_CLK 39 
+#define SD_MMC_CMD 38
+#define SD_MMC_D0 40
+#elif defined(CAMERA_MODEL_XIAO_ESP32S3)
+// pins configured for SD card on this camera board
+#define SD_MMC_CLK 7 
+#define SD_MMC_CMD 9
+#define SD_MMC_D0 8
+#endif
+
 #include "camera_pins.h"
 
 #define ONEMEG (1024 * 1024)
 
 class AppHardware {
   public:
+    String appName = APP_NAME;
+    String appVersion = APP_VER;
     String cameraBoard = CAM_BOARD;
     String cameraModel;
     String storageType;

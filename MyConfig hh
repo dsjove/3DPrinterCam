@@ -27,3 +27,6 @@
 
 #define INCLUDE_SD
 #define STORAGE SD_MMC // one of: SPIFFS LittleFS SD_MMC 
+
+#define APP_NAME "3DPrinterCam"
+#define APP_VER "0.0.1"

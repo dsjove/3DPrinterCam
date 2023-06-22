@@ -8,6 +8,10 @@ WifiConnection::WifiConnection() {
 }
 
 int WifiConnection::setup() {
+  if (!strlen(hostName)) {  
+    //sprintf(hostName, "%s_%012llX", APP_NAME, ESP.getEfuseMac());
+  }
+
   return startWifi(true) ? 0 : 1;
 }
 

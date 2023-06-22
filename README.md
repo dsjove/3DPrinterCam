@@ -17,6 +17,11 @@ That project does a lot more than what we need and not exactly what we need. Des
 
 ## Code Status:
 
+I have not yet created an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor. I would like to implement the WIFI and basic WebServer first. That is how we will get feedback when hooked up to printer.
+
+### MyConfig.h
+You will need to copy/rename MyConfig.hh and make any needed hardware declaration changes.
+
 ### 3DPrinterCam.nio
 This is the main entry point into the program. The only buxsiness logic is parsing the serial commands.\
 TODO: serial reads for the commands are fine for protoype but should be more robust\
