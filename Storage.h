@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-struct AppHardware;
+class AppHardware;
 
 class Storage {
   public:

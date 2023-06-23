@@ -1,6 +1,8 @@
+#include "AppHardware.h"
 #include "Storage.h"
 #include "Camera.h"
 #include "AVI.h"
+#include "NetworkConfig.h"
 #include "WIFIConnection.h"
 #include "Globals.h"
 #include <HardwareSerial.h>
@@ -8,6 +10,8 @@
 AppHardware hardware;
 Storage storage;
 Camera camera;
+NetworkConfig network;
+WifiConnection wifi(network);
 AVI avi;
 
 void setup() {
@@ -16,6 +20,8 @@ void setup() {
   storage.setup(hardware);
   camera.setup(hardware);
   Serial.println(hardware.toString());
+  wifi.setup();
+  Serial.println(network.toString());
   avi.setup(camera.frameSize());
   Serial.println("Running");
 }

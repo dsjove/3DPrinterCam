@@ -17,19 +17,21 @@ That project does a lot more than what we need and not exactly what we need. Des
 
 ## Code Status:
 
-I have not yet created an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor. I would like to implement the WIFI and basic WebServer first. That is how we will get feedback when hooked up to printer.
+I have not yet run an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor. I would like to implement the WIFI and basic WebServer first. That is how we will get feedback when hooked up to printer.
 
 ### MyConfig.h
 You will need to copy/rename MyConfig.hh and make any needed hardware declaration changes.
 
 ### 3DPrinterCam.nio
-This is the main entry point into the program. The only buxsiness logic is parsing the serial commands.\
+This is the main entry point into the program. The only business logic is parsing the serial commands.\
 TODO: serial reads for the commands are fine for protoype but should be more robust\
-TODO: eliminate 'begin' and pass GCODE file name as part of other commands (use date if not supplied)
+TODO: Pass GCODE file name as part of other commands (use date if not supplied)
+TODO: blink flash at end of setup
 
 ### Globals.h/cpp camera_pins.h
 Junk Drawer. This is where the hardware defines reside.\
 TODO: finish debugMemory
+TODO: move time functions
 
 ### Camera.h/cpp
 Camera setup, config, and frame capture\
@@ -37,23 +39,32 @@ TODO: expose camera settings and flash for external control
 
 ### Storage.h/cpp
 File System setup\
-TODO: test other things than just the SD Card\
+TODO: test other hardware than just the SD Card\
 TODO: file(s) access for CamServer
 
 ### AVI.h/cpp
 Saves captures as timelapsed AVI moview files
 TODO: max frames compare fails\
 TODO: tune FPS\
-TODO: auto close on timer\
-TODO: use file name as begin/end markers
+TODO: auto close file on timer\
+TODO: use change in file name as begin/end conditions
 
 ### WifiConnection.h/cpp
 WIIFI and Time setup\
-TODO: use
+TODO: finish
+TODO: move time functions
+TODO: have NetworkConfig read a data file 
 
 ### CamServer
 Restful web server for files and remote control. No need for HTML.\
 TODO: implement
+
+### CommandControl
+This will be the place where both printer and WebServer can push commands
+- begin
+- end
+- snap
+- light on/off
 
 ## Images
 ![Hardware](Hardware.jpeg)

@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "AppHardware.h"
 #include "Globals.h"
 #include <exception>
 #include <HardwareSerial.h>

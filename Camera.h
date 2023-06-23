@@ -1,7 +1,7 @@
 #pragma once
 #include "esp_camera.h"
 
-struct AppHardware;
+class AppHardware;
 
 class Camera {
   public:

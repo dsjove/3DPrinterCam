@@ -1,4 +1,5 @@
 #include "Storage.h"
+#include "AppHardware.h"
 #include "Globals.h"
 #include <SD_MMC.h>
 
