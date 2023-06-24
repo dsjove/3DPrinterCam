@@ -3,7 +3,7 @@
 #include "Globals.h"
 
 #include <HardwareSerial.h>
-#define LOG_INF(format, ...) //Serial.print(format, __VA_ARGS__)
+#define LOG_INF Serial.printf
 #define LOG_ERR LOG_INF
 #define LOG_WRN LOG_INF
 
@@ -69,9 +69,11 @@ void WifiConnection::startWifi() {
     wlStat = WL_NO_SSID_AVAIL;
   }
   else {
-    while (wlStat = WiFi.status(), wlStat != WL_CONNECTED && millis() - startAttemptTime < 5000)  {
+    while (
+        wlStat = WiFi.status(), 
+        wlStat != WL_CONNECTED && millis() - startAttemptTime < wifiInitialTimeout) {
       Serial.print(".");
-      delay(500);
+      delay(wifiInitialDelay);
       Serial.flush();
     }
   }
@@ -79,17 +81,15 @@ void WifiConnection::startWifi() {
     setWifiAP(); // AP allowed if no Station SSID eg on first time use 
   }
   if (wlStat != WL_CONNECTED) {
-    LOG_WRN("SSID %s %s", _config.ST_SSID, wifiStatusStr(wlStat));
+    LOG_WRN("SSID '%s' %s", _config.ST_SSID, wifiStatusStr(wlStat));
   }
   setupMdnsHost(); // not on ESP32 as uses 6k of heap
   // show stats of requested SSID
-  /*
   int numNetworks = WiFi.scanNetworks();
   for (int i=0; i < numNetworks; i++) {
-    if (!strcmp(WiFi.SSID(i).c_str(), ST_SSID))
-      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  ST_SSID, WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
+    if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID))
+      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  _config.ST_SSID, WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
   }
-  */
   wifiStarted = wlStat == WL_CONNECTED ? true : false;
   startPing();
 }
@@ -118,7 +118,7 @@ void WifiConnection::setWifiSTA() {
   if (strlen(_config.ST_ip) > 1) {
     IPAddress _ip, _gw, _sn, _ns1, _ns2;
     if (!_ip.fromString(_config.ST_ip)) {
-      LOG_ERR("Failed to parse IP: %s", ST_ip);
+      LOG_ERR("Failed to parse IP: %s", _config.ST_ip);
     }
     else {
       _ip.fromString(_config.ST_ip);
@@ -141,17 +141,17 @@ void WifiConnection::setWifiAP() {
   if (!APstarted) {
     // Set access point with static ip if provided
     if (strlen(_config.AP_ip) > 1) {
-      LOG_INF("Set AP static IP :%s, %s, %s", AP_ip, AP_gw, AP_sn);  
+      //LOG_INF("Set AP static IP :%s, %s, %s", _config.AP_ip, _config.AP_gw, _config.AP_sn);  
       IPAddress _ip, _gw, _sn, _ns1 ,_ns2;
       _ip.fromString(_config.AP_ip);
       _gw.fromString(_config.AP_gw);
       _sn.fromString(_config.AP_sn);
       // set static ip
-      bool r = WiFi.softAPConfig(_ip, _gw, _sn);
-      Serial.println(r);
+      WiFi.softAPConfig(_ip, _gw, _sn);
     } 
+    //TODO: this is failing
     bool r = WiFi.softAP(_config.AP_SSID, _config.AP_Pass);
-    Serial.println(r);
+    LOG_INF("\nsetWifiAP %i\n", r);
   }
 }
 
@@ -159,8 +159,8 @@ void WifiConnection::onWiFiEvent(WiFiEvent_t event) {
   // callback to report on wifi events
   if (event == ARDUINO_EVENT_WIFI_READY);
   else if (event == ARDUINO_EVENT_WIFI_SCAN_DONE);  
-  else if (event == ARDUINO_EVENT_WIFI_STA_START) LOG_INF("Wifi Station started, connecting to: %s", ST_SSID);
-  else if (event == ARDUINO_EVENT_WIFI_STA_STOP) LOG_INF("Wifi Station stopped %s", ST_SSID);
+  else if (event == ARDUINO_EVENT_WIFI_STA_START) LOG_INF("Wifi Station started, connecting to: %s", _config.ST_SSID);
+  else if (event == ARDUINO_EVENT_WIFI_STA_STOP) LOG_INF("Wifi Station stopped %s", _config.ST_SSID);
   else if (event == ARDUINO_EVENT_WIFI_AP_START) {
     if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID) || !strlen(_config.AP_SSID)) {
       LOG_INF("Wifi AP SSID: %s started, use 'http://%s' to connect", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
@@ -169,18 +169,18 @@ void WifiConnection::onWiFiEvent(WiFiEvent_t event) {
   }
   else if (event == ARDUINO_EVENT_WIFI_AP_STOP) {
     if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID)) {
-      LOG_INF("Wifi AP stopped: %s", AP_SSID);
+      LOG_INF("Wifi AP stopped: %s", _config.AP_SSID);
       APstarted = false;
     }
   }
   else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) LOG_INF("Wifi Station IP, use 'http://%s' to connect", WiFi.localIP().toString().c_str()); 
   else if (event == ARDUINO_EVENT_WIFI_STA_LOST_IP) LOG_INF("Wifi Station lost IP");
   else if (event == ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
-  else if (event == ARDUINO_EVENT_WIFI_STA_CONNECTED) LOG_INF("WiFi Station connection to %s, using hostname: %s", ST_SSID, hostName);
+  else if (event == ARDUINO_EVENT_WIFI_STA_CONNECTED) LOG_INF("WiFi Station connection to %s, using hostname: %s", _config.ST_SSID, _config.hostName);
   else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) LOG_INF("WiFi Station disconnected");
   else if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED) LOG_INF("WiFi AP client connection");
   else if (event == ARDUINO_EVENT_WIFI_AP_STADISCONNECTED) LOG_INF("WiFi AP client disconnection");
-  else;// LOG_WRN("WiFi Unhandled event %d", event);
+  else LOG_WRN("WiFi Unhandled event %d", event);
 }
 
 void WifiConnection::startPing() {
@@ -217,8 +217,6 @@ void WifiConnection::staticPingSuccess(esp_ping_handle_t hdl, void *args) {
 
 void WifiConnection::pingSuccess(esp_ping_handle_t hdl, void *args) {
   if (!timeSynchronized) getLocalNTP();
-  if (!dataFilesChecked) dataFilesChecked = checkDataFiles();
-  doAppPing();
 }
 
 void WifiConnection::staticPingTimeout(esp_ping_handle_t hdl, void *args) {
@@ -274,37 +272,4 @@ void WifiConnection::syncToBrowser(uint32_t browserUTC) {
   setenv("TZ", timezone, 1);
   tzset();
   showLocalTime("browser");
-}
-
-bool WifiConnection::checkDataFiles() {
-  /*
-  // Download any missing data files
-  if (!fp.exists(DATA_DIR)) fp.mkdir(DATA_DIR);
-  bool res = false;
-  if (strlen(GITHUB_URL)) {
-    res = wgetFile(GITHUB_URL, CONFIG_FILE_PATH, true);
-    if (res) res = wgetFile(GITHUB_URL, INDEX_PAGE_PATH);      
-    if (res) res = appDataFiles();
-  }
-  return res;
-  */
-  return true;
-}
-
-void WifiConnection::doAppPing() {
-  /*
-  doIOExtPing();
-  // check for night time actions
-  if (isNight(nightSwitch)) {
-    if (wakeUse && wakePin) {
-     // to use LDR on wake pin, connect it between pin and 3V3
-     // uses internal pulldown resistor as voltage divider
-     // but may need to add external pull down between pin
-     // and GND to alter required light level for wakeup
-     digitalWrite(PWDN_GPIO_NUM, 1); // power down camera
-     goToSleep(wakePin, true);
-    }
-    if (lampNight) setLamp(lampLevel);
-  } else if (lampNight) setLamp(0);
-  */
 }

@@ -18,11 +18,13 @@ void setup() {
   Serial.begin(115200);
   Serial.setDebugOutput(true);
   storage.setup(hardware);
+  //TODO: Config File
   camera.setup(hardware);
   Serial.println(hardware.toString());
   wifi.setup();
   Serial.println(network.toString());
   avi.setup(camera.frameSize());
+  //TODO: CamServer
   Serial.println("Running");
 }
 
@@ -38,6 +40,12 @@ void loop() {
       Serial.println("snaplayer");
       camera_fb_t* fb = camera.processFrame();
       avi.record(fb);
+      esp_camera_fb_return(fb);
+    }
+    else if (command.indexOf("snappic") != -1) {
+      Serial.println("snappic");
+      camera_fb_t* fb = camera.processFrame();
+      avi.snap(fb);
       esp_camera_fb_return(fb);
     }
     else if (command.indexOf("snapend") != -1) {

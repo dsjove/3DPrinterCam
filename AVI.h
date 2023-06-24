@@ -8,8 +8,10 @@ class AVI {
     AVI();
     void setup(framesize_t frameSize);
     void open();
+    bool snap(camera_fb_t* fb);
     bool record(camera_fb_t* fb);
     bool close();
+    void ping();
 
   private:
     struct IDXs {

@@ -6,8 +6,8 @@ class NetworkConfig {
     NetworkConfig();
 
     char hostName[32] = ""; // Default Host name
-    const char ST_SSID[32]  = ""; //Default router ssid
-    const char ST_Pass[64] = ""; //Default router passd
+    char ST_SSID[32]  = ""; //Default router ssid
+    char ST_Pass[64] = ""; //Default router passd
 
     // leave following blank for dhcp
     const char ST_ip[16]  = ""; // Static IP

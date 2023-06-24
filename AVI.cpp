@@ -229,7 +229,17 @@ void AVI::open() {
   frameCntTL = 1;
 }
 
+bool AVI::snap(camera_fb_t* fb) {
+  if (!fb) return false;
+  if (SD_MMC.exists(LASTJPG)) SD_MMC.remove(LASTJPG);
+  last = SD_MMC.open(LASTJPG, FILE_WRITE);
+  last.write(fb->buf, fb->len);
+  last.close();
+  return true;
+}
+
 bool AVI::record(camera_fb_t* fb) {
+  //TODO if snap only 
   if (!fb) return false;
   if (frameCntTL == 0) {   
     open();
@@ -244,15 +254,16 @@ bool AVI::record(camera_fb_t* fb) {
   tlFile.write(fb->buf, jpegSize);
   buildAviIdx(jpegSize, true); // save avi index for frame
 
-  if (SD_MMC.exists(LASTJPG)) SD_MMC.remove(LASTJPG);
-  last = SD_MMC.open(LASTJPG, FILE_WRITE);
-  last.write(fb->buf, fb->len);
-  last.close();
+  AVI::snap(fb);
 
   frameCntTL++;
   if (frameCntTL > maxFrames) {
-    //close();
+    //close(); //TODO: why is this being executed when not true!!!!
   }
+}
+
+void AVI::ping() {
+  //TODO: close AVI file if no record after a certain amount of time
 }
 
 bool AVI::close() {
@@ -288,57 +299,3 @@ bool AVI::close() {
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;
 }
-/*
-TaskHandle_t captureHandle = NULL;
-volatile bool isPlaying = false;
-SemaphoreHandle_t playbackSemaphore = xSemaphoreCreateBinary();
-uint16_t frameInterval = 0;//10000 / FPS;
-
-static void IRAM_ATTR frameISR() {
-  // interrupt at current frame rate
-  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(captureHandle, &xHigherPriorityTaskWoken); // wake capture task to process frame
-  if (isPlaying) xSemaphoreGiveFromISR (playbackSemaphore, &xHigherPriorityTaskWoken ); // notify playback to send frame
-  if (xHigherPriorityTaskWoken == pdTRUE) portYIELD_FROM_ISR();
-}
-
-void controlFrameTimer(bool restartTimer) {
-  // frame timer control, timer3 so dont conflict with cam
-  static hw_timer_t* timer3 = NULL;
-  // stop current timer
-  if (timer3) {
-    timerAlarmDisable(timer3);   
-    timerDetachInterrupt(timer3); 
-    timerEnd(timer3);
-  }
-  if (restartTimer) {
-    // (re)start timer 3 interrupt per required framerate
-    timer3 = timerBegin(3, 8000, true); // 0.1ms tick
-    frameInterval = 0;//10000 / FPS; // in units of 0.1ms 
-    //LOG_DBG("Frame timer interval %ums for FPS %u", frameInterval/10, FPS); 
-    timerAlarmWrite(timer3, frameInterval, true); 
-    timerAlarmEnable(timer3);
-    timerAttachInterrupt(timer3, &frameISR, true);
-  }
-}
-
-static void deleteTask(TaskHandle_t thisTaskHandle) {
-  if (thisTaskHandle != NULL) vTaskDelete(thisTaskHandle);
-  thisTaskHandle = NULL;
-}
-
-void endTasks() {
-  deleteTask(captureHandle);
-}
-
-void OTAprereq() {
-  // stop timer isrs, and free up heap space, or crashes esp32
-  controlFrameTimer(false);
-  endTasks();
-}
-
-
-static void startOTAserver() {
-  OTAprereq();
-}
-*/
