@@ -4,6 +4,7 @@
 #include "AVI.h"
 #include "NetworkConfig.h"
 #include "WIFIConnection.h"
+#include "CamServer.h"
 #include "Globals.h"
 #include <HardwareSerial.h>
 
@@ -13,6 +14,7 @@ Camera camera;
 NetworkConfig network;
 WifiConnection wifi(network);
 AVI avi;
+CamServer camServer;
 
 void setup() {
   Serial.begin(115200);
@@ -24,7 +26,7 @@ void setup() {
   wifi.setup();
   Serial.println(network.toString());
   avi.setup(camera.frameSize());
-  //TODO: CamServer
+  camServer.setup();
   Serial.println("Running");
 }
 

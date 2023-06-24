@@ -63,7 +63,8 @@ TODO: implement
 This will be the place where both printer and WebServer can push commands
 - begin
 - end
-- snap
+- ping
+- snap get/make
 - light on/off
 
 ## Images

@@ -231,7 +231,6 @@ void WifiConnection::pingTimeout(esp_ping_handle_t hdl, void *args) {
       startWifi();
     }
   }
-  doAppPing();
 }
 
 void WifiConnection::stopPing() {
