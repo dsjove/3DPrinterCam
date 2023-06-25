@@ -6,26 +6,62 @@
 #define LOG_ERR LOG_INF
 #define LOG_WRN LOG_INF
 
-CamServer::CamServer() {
+#define JSON_BUFF_LEN (32 * 1024) // set big enough to hold all file names in a folder
 
+CamServer::CamServer(ICommandControl& commandControl)
+: _commandControl(commandControl)
+, jsonBuff(psramFound() ? (char*)ps_malloc(JSON_BUFF_LEN) : (char*)malloc(JSON_BUFF_LEN))
+{
+  ::memset(jsonBuff, 0, JSON_BUFF_LEN);
 }
 
-static esp_err_t indexHandler(httpd_req_t* req) {
+esp_err_t CamServer::indexHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths.jsonBuff[0] = '{';
+  ths.jsonBuff[1] = '}';
+  ths.jsonBuff[2] = 0;
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
-static esp_err_t getSnapHandler(httpd_req_t* req) {
+esp_err_t CamServer::getSnapHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
-static esp_err_t makeSnapHandler(httpd_req_t* req) {
+esp_err_t CamServer::makeSnapHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths._commandControl.snap();
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
-static esp_err_t beginHandler(httpd_req_t* req) {
+esp_err_t CamServer::beginHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths._commandControl.begin();
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
-static esp_err_t endHandler(httpd_req_t* req) {
+esp_err_t CamServer::endHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths._commandControl.end();
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
-static esp_err_t pingHandler(httpd_req_t* req) {
+esp_err_t CamServer::pingHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths._commandControl.ping();
+  httpd_resp_set_type(req, "application/json");
+  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  return ESP_OK;
 }
 
 #define MAX_CLIENTS 2 // allowing too many concurrent web clients can cause errors
@@ -40,7 +76,7 @@ void CamServer::setup() {
   config.lru_purge_enable = true;
   httpd_uri_t indexUri = {.uri = "/", .method = HTTP_GET, .handler = indexHandler, .user_ctx = this};
   httpd_uri_t getSnapUri = {.uri = "/snap", .method = HTTP_GET, .handler = getSnapHandler, .user_ctx = this};
-  httpd_uri_t makeSnapUri = {.uri = "/snap", .method = HTTP_PUT, .handler = makeSnapHandler, .user_ctx = this};
+  httpd_uri_t makeSnapUri = {.uri = "/snapmake", .method = HTTP_PUT, .handler = makeSnapHandler, .user_ctx = this};
   httpd_uri_t beginUri = {.uri = "/begin", .method = HTTP_GET, .handler = beginHandler, .user_ctx = this};
   httpd_uri_t endUri = {.uri = "/end", .method = HTTP_GET, .handler = endHandler, .user_ctx = this};
   httpd_uri_t pingUri = {.uri = "/ping", .method = HTTP_GET, .handler = pingHandler, .user_ctx = this};

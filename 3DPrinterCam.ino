@@ -8,51 +8,98 @@
 #include "Globals.h"
 #include <HardwareSerial.h>
 
-AppHardware hardware;
-Storage storage;
-Camera camera;
-NetworkConfig network;
-WifiConnection wifi(network);
-AVI avi;
-CamServer camServer;
+class CommandControl: ICommandControl {
+  public:
+    CommandControl() 
+    : wifi(network)
+    , camServer(*this) {
+    }
 
-void setup() {
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
-  storage.setup(hardware);
-  //TODO: Config File
-  camera.setup(hardware);
-  Serial.println(hardware.toString());
-  wifi.setup();
-  Serial.println(network.toString());
-  avi.setup(camera.frameSize());
-  camServer.setup();
-  Serial.println("Running");
-}
+    void setup() {
+      Serial.begin(115200);
+      Serial.setDebugOutput(true);
+      storage.setup(hardware);
+      //TODO: Config File
+      camera.setup(hardware);
+      Serial.println(hardware.toString());
+      wifi.setup();
+      Serial.println(network.toString());
+      avi.setup(camera.frameSize());
+      camServer.setup();
+      ping();
+    }
 
-void loop() {
-  if (Serial.available()) {
-    //TODO: is this the best way to parse the commands?
-    String command = Serial.readStringUntil('\n');
-    if (command.indexOf("snapbegin") != -1) {
-      Serial.println("snapbegin");
+    void loop() {
+      if (Serial.available()) {
+        //TODO: is this the best way to parse the commands?
+        String command = Serial.readStringUntil('\n');
+        if (command.indexOf("snapbegin") != -1) {
+          Serial.println("snapbegin");
+          begin();
+        }
+        else if (command.indexOf("snaplayer") != -1) {
+          Serial.println("snaplayer");
+          snapLayer();
+        }
+        else if (command.indexOf("snappic") != -1) {
+          Serial.println("snappic");
+          snap();
+        }
+        else if (command.indexOf("snapend") != -1) {
+          Serial.println("snapend");
+          end();
+        }
+      }
+    }
+
+    virtual void begin() {
       avi.open();
     }
-    else if (command.indexOf("snaplayer") != -1) {
-      Serial.println("snaplayer");
+
+    virtual void snapLayer() {
       camera_fb_t* fb = camera.processFrame();
       avi.record(fb);
       esp_camera_fb_return(fb);
     }
-    else if (command.indexOf("snappic") != -1) {
-      Serial.println("snappic");
+
+    virtual void end() {
+      avi.close();
+    }
+
+    virtual void snap() {
       camera_fb_t* fb = camera.processFrame();
       avi.snap(fb);
       esp_camera_fb_return(fb);
     }
-    else if (command.indexOf("snapend") != -1) {
-      Serial.println("snapend");
-      avi.close();
+
+    virtual void ping() {
+      for (int i = 0; i < 2; i++) {
+        camera.enableLed(true);
+        delay(500);
+        camera.enableLed(false);
+      }
     }
-  }
+
+    virtual void light(bool on) {
+        camera.enableLed(on);
+    }
+
+  private:
+    AppHardware hardware;
+    Storage storage;
+    Camera camera;
+    NetworkConfig network;
+    WifiConnection wifi;
+    AVI avi;
+    CamServer camServer;
+};
+
+CommandControl commandControl;
+
+void setup() {
+  commandControl.setup();
+}
+
+void loop() {
+  commandControl.loop();
 }

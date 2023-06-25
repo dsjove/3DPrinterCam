@@ -7,6 +7,7 @@ class Camera {
   public:
     Camera();
     void setup(AppHardware& hardware);
+    void enableLed(bool en);
     framesize_t frameSize();
     camera_fb_t* processFrame();
   private:

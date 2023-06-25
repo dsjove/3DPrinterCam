@@ -26,7 +26,6 @@ You will need to copy/rename MyConfig.hh and make any needed hardware declaratio
 This is the main entry point into the program. The only business logic is parsing the serial commands.\
 TODO: serial reads for the commands are fine for protoype but should be more robust\
 TODO: Pass GCODE file name as part of other commands (use date if not supplied)
-TODO: blink flash at end of setup
 
 ### Globals.h/cpp camera_pins.h
 Junk Drawer. This is where the hardware defines reside.\
@@ -35,7 +34,7 @@ TODO: move time functions
 
 ### Camera.h/cpp
 Camera setup, config, and frame capture\
-TODO: expose camera settings and flash for external control
+TODO: expose camera settings
 
 ### Storage.h/cpp
 File System setup\
@@ -51,21 +50,13 @@ TODO: use change in file name as begin/end conditions
 
 ### WifiConnection.h/cpp
 WIIFI and Time setup\
-TODO: finish
-TODO: move time functions
+TODO: AP not working\
+TODO: move time functions\
 TODO: have NetworkConfig read a data file 
 
 ### CamServer
 Restful web server for files and remote control. No need for HTML.\
-TODO: implement
-
-### CommandControl
-This will be the place where both printer and WebServer can push commands
-- begin
-- end
-- ping
-- snap get/make
-- light on/off
+TODO: serve files
 
 ## Images
 ![Hardware](Hardware.jpeg)

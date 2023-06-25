@@ -33,3 +33,6 @@
 
 #define DEFAULT_SSD ""
 #define DEFAULT_SSD_PASS ""
+
+// Enable LED FLASH setting
+#define CONFIG_LED_ILLUMINATOR_ENABLED 1
