@@ -1,3 +1,7 @@
+/**
+  Change defines to match your hardware
+**/
+
 #if defined(CONFIG_IDF_TARGET_ESP32)
 // default pin configuration for ESP32 cam boards
 #define CAMERA_MODEL_AI_THINKER // Has PSRAM  
@@ -36,3 +40,4 @@
 
 // Enable LED FLASH setting
 #define CONFIG_LED_ILLUMINATOR_ENABLED 1
+#define LED_LEDC_CHANNEL 2 //Using different ledc channel/timer than camera

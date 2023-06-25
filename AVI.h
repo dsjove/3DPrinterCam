@@ -3,6 +3,10 @@
 #include "esp_camera.h"
 #include <SD_MMC.h>
 
+/**
+  Sames captures images in AVI and jpeg files.
+**/
+
 class AVI {
   public:
     AVI();

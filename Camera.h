@@ -3,11 +3,15 @@
 
 class AppHardware;
 
+/**
+  Initializes the camera and LED. Provides simple interface of the hardware.
+**/
+
 class Camera {
   public:
     Camera();
     void setup(AppHardware& hardware);
-    void enableLed(bool en);
+    void led(double intensity);
     framesize_t frameSize();
     camera_fb_t* processFrame();
   private:

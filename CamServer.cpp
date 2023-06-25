@@ -18,6 +18,7 @@ CamServer::CamServer(ICommandControl& commandControl)
 esp_err_t CamServer::indexHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths.jsonBuff[0] = '{';
+  //TODO: App, Network, Runtime Stats
   ths.jsonBuff[1] = '}';
   ths.jsonBuff[2] = 0;
   httpd_resp_set_type(req, "application/json");
@@ -28,6 +29,8 @@ esp_err_t CamServer::indexHandler(httpd_req_t* req) {
 esp_err_t CamServer::getSnapHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   httpd_resp_set_type(req, "application/json");
+  //TODO: serve jpeg file
+  ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
@@ -36,6 +39,7 @@ esp_err_t CamServer::makeSnapHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths._commandControl.snap();
   httpd_resp_set_type(req, "application/json");
+  ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
@@ -44,6 +48,7 @@ esp_err_t CamServer::beginHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths._commandControl.begin();
   httpd_resp_set_type(req, "application/json");
+  ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
@@ -52,6 +57,7 @@ esp_err_t CamServer::endHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths._commandControl.end();
   httpd_resp_set_type(req, "application/json");
+  ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
@@ -60,6 +66,7 @@ esp_err_t CamServer::pingHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths._commandControl.ping();
   httpd_resp_set_type(req, "application/json");
+  ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }

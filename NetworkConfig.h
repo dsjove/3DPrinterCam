@@ -1,9 +1,16 @@
 #pragma once
 #include <WString.h>
 
+/**
+  All the required values to setup the network to meet your
+  environment.
+**/
+
 class NetworkConfig {
   public:
     NetworkConfig();
+
+  //TODO: make configurable from file
 
     char hostName[32] = ""; // Default Host name
     char ST_SSID[32]  = ""; //Default router ssid

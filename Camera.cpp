@@ -7,31 +7,14 @@
 Camera::Camera() {
 }
 
-// LED FLASH setup
+void Camera::led(double intensity) { 
+#if defined(LED_GPIO_NUM)
 #if CONFIG_LED_ILLUMINATOR_ENABLED
-#define LED_LEDC_CHANNEL 2 //Using different ledc channel/timer than camera
-#define CONFIG_LED_MAX_INTENSITY 255
-#endif
-
-void setupLedFlash(int pin) 
-{
-#if CONFIG_LED_ILLUMINATOR_ENABLED
-  ledcSetup(LED_LEDC_CHANNEL, 5000, 8);
-  ledcAttachPin(pin, LED_LEDC_CHANNEL);
-  #else
-  log_i("LED flash is disabled -> CONFIG_LED_ILLUMINATOR_ENABLED = 0");
-#endif
-}
-
-void Camera::enableLed(bool en)
-{ 
-#if CONFIG_LED_ILLUMINATOR_ENABLED
-  // Turn LED On or Off
-    int duty = en ? CONFIG_LED_MAX_INTENSITY : 0;
-    ledcWrite(LED_LEDC_CHANNEL, duty);
+    ledcWrite(LED_LEDC_CHANNEL, (int)(intensity * 255));
     //ledc_set_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL, duty);
     //ledc_update_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL);
     //log_i("Set LED intensity to %d", duty);
+#endif
 #endif
 }
 
@@ -40,9 +23,6 @@ void Camera::setup(AppHardware& hardware) {
   ::memset(&config, 0, sizeof(config));
   assignPins(config);
   initCam(config, hardware);
-  #if defined(LED_GPIO_NUM)
-    setupLedFlash(LED_GPIO_NUM);
-  #endif
 }
 
 void Camera::assignPins(camera_config_t& config) {
@@ -81,6 +61,13 @@ void Camera::assignPins(camera_config_t& config) {
 #if defined(CAMERA_MODEL_ESP_EYE)
   pinMode(13, INPUT_PULLUP);
   pinMode(14, INPUT_PULLUP);
+#endif
+
+#if defined(LED_GPIO_NUM)
+#if CONFIG_LED_ILLUMINATOR_ENABLED
+  ledcSetup(LED_LEDC_CHANNEL, 5000, 8);
+  ledcAttachPin(LED_GPIO_NUM, LED_LEDC_CHANNEL);
+#endif
 #endif
 }
 

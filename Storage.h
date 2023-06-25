@@ -3,6 +3,11 @@
 
 class AppHardware;
 
+/**
+  Setup access to file system.
+  This will need to provide file listings, etc
+**/
+
 class Storage {
   public:
     Storage();

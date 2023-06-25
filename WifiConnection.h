@@ -4,6 +4,10 @@
 
 class NetworkConfig;
 
+/**
+  Setup WIFI and device time
+**/
+
 class WifiConnection {
   public:
     WifiConnection(const NetworkConfig& config);

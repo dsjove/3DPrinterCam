@@ -2,6 +2,10 @@
 #include <WString.h>
 #include <time.h>
 
+/**
+  Hardware defines
+**/
+
 #include "MyConfig.h"
 
 #if defined(CAMERA_MODEL_AI_THINKER)

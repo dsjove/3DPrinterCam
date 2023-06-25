@@ -1,6 +1,10 @@
 #pragma once
 #include <WString.h>
 
+/**
+  Compile time and Setup time constants.
+**/
+
 class AppHardware {
   public:
     AppHardware();

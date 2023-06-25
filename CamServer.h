@@ -11,6 +11,11 @@ class ICommandControl {
     virtual void light(bool on) = 0;
 };
 
+/**
+  Basic webserver that provides url-based invocation of commands.
+  TODO Will serve files.
+**/
+
 class CamServer {
   public:
     CamServer(ICommandControl& commandControl);

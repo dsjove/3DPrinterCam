@@ -8,6 +8,20 @@
 #include "Globals.h"
 #include <HardwareSerial.h>
 
+/**
+  CommandControl wires togher all the component classes and exposes setup/loop for the Arduino.
+**/
+
+/*
+TODO: RuntimeState
+- SD Free Space
+- Free memory
+- LED state
+- timeelapse state (frame count, begin/end date, file name)
+- last snap time-stamp
+- wifi state and SSID, ap on
+*/
+
 class CommandControl: ICommandControl {
   public:
     CommandControl() 
@@ -73,15 +87,16 @@ class CommandControl: ICommandControl {
     }
 
     virtual void ping() {
-      for (int i = 0; i < 2; i++) {
-        camera.enableLed(true);
-        delay(500);
-        camera.enableLed(false);
-      }
+      camera.led(0.25);
+      delay(500);
+      camera.led(0.0);
+      delay(500);
+      camera.led(0.25);
+      delay(500);
+      camera.led(0.0);
     }
 
     virtual void light(bool on) {
-        camera.enableLed(on);
     }
 
   private:
