@@ -11,6 +11,7 @@ class NetworkConfig {
     NetworkConfig();
 
   //TODO: make configurable from file
+  //TODO: allow multiple connections for retries
 
     char hostName[32] = ""; // Default Host name
     char ST_SSID[32]  = ""; //Default router ssid

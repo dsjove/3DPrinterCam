@@ -5,28 +5,20 @@
 #include "NetworkConfig.h"
 #include "WIFIConnection.h"
 #include "CamServer.h"
+#include "ESPTime.h"
 #include "Globals.h"
 #include <HardwareSerial.h>
 
 /**
-  CommandControl wires togher all the component classes and exposes setup/loop for the Arduino.
+  CommandControl wires together all the component classes and exposes setup/loop for the Arduino.
 **/
 
-/*
-TODO: RuntimeState
-- SD Free Space
-- Free memory
-- LED state
-- timeelapse state (frame count, begin/end date, file name)
-- last snap time-stamp
-- wifi state and SSID, ap on
-*/
-
-class CommandControl: ICommandControl {
+class CommandControl: IWifiDelegate, ICommandControl {
   public:
     CommandControl() 
-    : wifi(network)
-    , camServer(*this) {
+    : wifi(network, *this)
+    , camServer(*this)
+    , _lastfb(NULL) {
     }
 
     void setup() {
@@ -40,7 +32,9 @@ class CommandControl: ICommandControl {
       Serial.println(network.toString());
       avi.setup(camera.frameSize());
       camServer.setup();
-      ping();
+      // TODO: wait until time set
+      getFrame();
+      signal();
     }
 
     void loop() {
@@ -66,37 +60,42 @@ class CommandControl: ICommandControl {
       }
     }
 
+    virtual void ping(bool success) {
+      if (success) {
+        ESPTime::getLocalNTP();
+      }
+      avi.detectIdle();
+    }
+
     virtual void begin() {
       avi.open();
     }
 
     virtual void snapLayer() {
-      camera_fb_t* fb = camera.processFrame();
-      avi.record(fb);
-      esp_camera_fb_return(fb);
+      getFrame();
+      avi.record(getFrame());
+    }
+
+    virtual void snap() {
+      avi.snap(getFrame());
     }
 
     virtual void end() {
       avi.close();
     }
 
-    virtual void snap() {
-      camera_fb_t* fb = camera.processFrame();
-      avi.snap(fb);
-      esp_camera_fb_return(fb);
-    }
-
-    virtual void ping() {
-      camera.led(0.25);
+    virtual void signal() {
+      camera.led(0.1);
       delay(500);
       camera.led(0.0);
       delay(500);
-      camera.led(0.25);
+      camera.led(0.1);
       delay(500);
       camera.led(0.0);
     }
 
     virtual void light(bool on) {
+      camera.led(on ? 1.0 : 0.0);
     }
 
   private:
@@ -107,6 +106,18 @@ class CommandControl: ICommandControl {
     WifiConnection wifi;
     AVI avi;
     CamServer camServer;
+
+    camera_fb_t* _lastfb;
+
+    camera_fb_t* getFrame() {
+      if (_lastfb) {
+        esp_camera_fb_return(_lastfb);
+        _lastfb = NULL;
+      }
+      _lastfb = camera.processFrame();
+      camServer.liveStream(_lastfb);
+      return _lastfb;
+    }
 };
 
 CommandControl commandControl;

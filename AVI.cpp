@@ -1,6 +1,6 @@
 #include "AVI.h"
 #include "Globals.h"
-#include "esp_timer.h"
+#include "ESPTime.h"
 
 /* 
 Generate AVI format for recorded videos
@@ -212,6 +212,7 @@ AVI::AVI() {
 void AVI::setup(framesize_t frameSize) {
   fsizePtr = frameSize; 
   FPS = frameData[fsizePtr].defaultFPS;
+  //TODO: allow for user adjustable FPS in AVI
 }
 
 #define TLTEMP "/current.tl"
@@ -262,7 +263,7 @@ bool AVI::record(camera_fb_t* fb) {
   }
 }
 
-void AVI::ping() {
+void AVI::detectIdle() {
   //TODO: close AVI file if no record after a certain amount of time
 }
 
@@ -292,9 +293,9 @@ bool AVI::close() {
   #define FILE_NAME_LEN 64
   char partName[FILE_NAME_LEN] = "";
   char TLname[FILE_NAME_LEN] = "";
-  dateFormat(partName, sizeof(partName), true);
+  ESPTime::dateFormat(partName, sizeof(partName), true);
   SD_MMC.mkdir(partName); // make date folder if not present
-  dateFormat(partName, sizeof(partName), false);
+  ESPTime::dateFormat(partName, sizeof(partName), false);
   snprintf(TLname, FILE_NAME_LEN - 1, "%s_%s_%u_%u.%s", partName, frameData[fsizePtr].frameSizeStr, tlPlaybackFPS, frameCntTL, "avi");
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;

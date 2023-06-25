@@ -7,15 +7,23 @@
   Sames captures images in AVI and jpeg files.
 **/
 
+struct AVIStatus {
+  time_t aviStart = 0;
+  time_t aviEnd = 0;
+  int aviFrameCoount = 0;
+  time_t lastSnap = 0;
+};
+
 class AVI {
   public:
     AVI();
     void setup(framesize_t frameSize);
+    AVIStatus status() const { return _status; }
     void open();
     bool snap(camera_fb_t* fb);
     bool record(camera_fb_t* fb);
     bool close();
-    void ping();
+    void detectIdle();
 
   private:
     struct IDXs {
@@ -47,4 +55,6 @@ class AVI {
     File tlFile;
     File last;
     uint8_t FPS = 0;
+
+    AVIStatus _status;
 };

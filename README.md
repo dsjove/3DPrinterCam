@@ -13,10 +13,12 @@ You will need to modify your printer slicer settings so the printer can command 
 - `M118 snapend` to end gcode before finalize
 - `M118 snappic` to end gcode after finalize
 
-I am cribbing a lot of logic from: [ESP32-CAM_MJPEG2SD](https://github.com/s60sc/ESP32-CAM_MJPEG2SD)
-That project does a lot more than what we need and not exactly what we need. Despite being a global-variable mess, it is an excellent source.
+You will need to copy MyConfig.hh to MyConfig.h and make any hardware declaration changes you need.
 
-## Code Status:
+## Status:
+
+Much of the code is cribbed from: [ESP32-CAM_MJPEG2SD](https://github.com/s60sc/ESP32-CAM_MJPEG2SD)
+That project does a lot more than what we need and not exactly what we need. Despite being a global-variable mess, it is an excellent source.
 
 I have not yet run an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor. The CamServer is nearly done enough to be able to test end-to-end.
 

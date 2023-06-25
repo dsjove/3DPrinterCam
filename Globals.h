@@ -1,6 +1,4 @@
 #pragma once
-#include <WString.h>
-#include <time.h>
 
 /**
   Hardware defines
@@ -33,5 +31,3 @@
 #include "camera_pins.h"
 
 #define ONEMEG (1024 * 1024)
-time_t getEpoch();
-void dateFormat(char* inBuff, size_t inBuffLen, bool isFolder);

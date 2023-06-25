@@ -6,16 +6,15 @@
 Storage::Storage() {
 }
 
-uint64_t Storage::freeSpace() {
+StorageStatus Storage::status() const {
+  StorageStatus status;
+  status.freeHeap = ESP.getFreeHeap();
+  status.freePSRAM = ESP.getFreePsram();
+  status.largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
 #ifdef INCLUDE_SD
-  return SD_MMC.usedBytes() / ONEMEG;
+    status.freeStorage = SD_MMC.usedBytes() / ONEMEG;
 #endif
-#ifdef _SPIFFS_H_
-  return 0;
-#endif
-#ifdef _LITTLEFS_H_
-  return 0;
-#endif
+  return status;
 }
 
 void Storage::setup(AppHardware& hardware) {

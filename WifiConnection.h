@@ -8,17 +8,27 @@ class NetworkConfig;
   Setup WIFI and device time
 **/
 
+struct WifiStatus {
+  String ssid;
+  bool wifiStarted = false;
+  bool apStarted = false;
+};
+
+class IWifiDelegate {
+  public:
+    virtual void ping(bool success) = 0;
+};
+
 class WifiConnection {
   public:
-    WifiConnection(const NetworkConfig& config);
+    WifiConnection(const NetworkConfig& config, IWifiDelegate& delegate);
     void setup();
-    void syncToBrowser(uint32_t browserUTC);
+    WifiStatus status() const { return _status; }
 
   private:
     const NetworkConfig& _config;
+    IWifiDelegate& _delegate;
 
-    const char timezone[64] = "GMT0";
-    const char ntpServer[64] = "pool.ntp.org";
     const int wifiTimeoutSecs = 30; // how often to check wifi status
     const int wifiInitialTimeout = 5000;
     const int wifiInitialDelay = 500;
@@ -26,10 +36,7 @@ class WifiConnection {
     static WifiConnection* singleton;
     esp_ping_handle_t pingHandle = NULL;
     
-    //TODO: move to struct for runtime state
-    bool wifiStarted = false;
-    bool APstarted = false;
-    bool timeSynchronized = false;
+    WifiStatus _status;
 
     void startWifi();
     void setWifiSTA();
@@ -45,7 +52,4 @@ class WifiConnection {
     static void staticPingTimeout(esp_ping_handle_t hdl, void *args);
     void pingTimeout(esp_ping_handle_t hdl, void *args);
     void stopPing();
-
-    bool getLocalNTP();
-    void showLocalTime(const char* timeSrc);
 };

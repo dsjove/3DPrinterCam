@@ -7,17 +7,6 @@
 Camera::Camera() {
 }
 
-void Camera::led(double intensity) { 
-#if defined(LED_GPIO_NUM)
-#if CONFIG_LED_ILLUMINATOR_ENABLED
-    ledcWrite(LED_LEDC_CHANNEL, (int)(intensity * 255));
-    //ledc_set_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL, duty);
-    //ledc_update_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL);
-    //log_i("Set LED intensity to %d", duty);
-#endif
-#endif
-}
-
 void Camera::setup(AppHardware& hardware) {
   camera_config_t config;
   ::memset(&config, 0, sizeof(config));
@@ -129,6 +118,17 @@ void Camera::initCam(camera_config_t& config, AppHardware& hardware) {
   s->set_vflip(s, 1);
 #endif
   }
+}
+
+void Camera::led(double intensity) { 
+#if defined(LED_GPIO_NUM)
+#if CONFIG_LED_ILLUMINATOR_ENABLED
+    ledcWrite(LED_LEDC_CHANNEL, (int)(intensity * 255.0));
+    //ledc_set_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL, duty);
+    //ledc_update_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL);
+    //log_i("Set LED intensity to %d", duty);
+#endif
+#endif
 }
 
 framesize_t Camera::frameSize() {

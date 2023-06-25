@@ -9,8 +9,9 @@
 
 WifiConnection* WifiConnection::singleton = NULL;
 
-WifiConnection::WifiConnection(const NetworkConfig& config)
-  : _config(config) {
+WifiConnection::WifiConnection(const NetworkConfig& config, IWifiDelegate& delegate)
+  : _config(config)
+  , _delegate(delegate) {
   singleton = this;
 }
 
@@ -86,11 +87,12 @@ void WifiConnection::startWifi() {
   setupMdnsHost(); // not on ESP32 as uses 6k of heap
   // show stats of requested SSID
   int numNetworks = WiFi.scanNetworks();
+  LOG_WRN("Found '%d' networks", numNetworks);
   for (int i=0; i < numNetworks; i++) {
-    if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID))
-      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  _config.ST_SSID, WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
+    //if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID))
+      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  WiFi.SSID(i), WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
   }
-  wifiStarted = wlStat == WL_CONNECTED ? true : false;
+  _status.wifiStarted = wlStat == WL_CONNECTED ? true : false;
   startPing();
 }
 
@@ -138,7 +140,7 @@ void WifiConnection::setWifiSTA() {
 }
 
 void WifiConnection::setWifiAP() {
-  if (!APstarted) {
+  if (!_status.apStarted) {
     // Set access point with static ip if provided
     if (strlen(_config.AP_ip) > 1) {
       //LOG_INF("Set AP static IP :%s, %s, %s", _config.AP_ip, _config.AP_gw, _config.AP_sn);  
@@ -150,8 +152,7 @@ void WifiConnection::setWifiAP() {
       WiFi.softAPConfig(_ip, _gw, _sn);
     } 
     //TODO: this is failing
-    bool r = WiFi.softAP(_config.AP_SSID, _config.AP_Pass);
-    LOG_INF("\nsetWifiAP %i\n", r);
+    _status.apStarted = WiFi.softAP(_config.AP_SSID, _config.AP_Pass);
   }
 }
 
@@ -164,13 +165,13 @@ void WifiConnection::onWiFiEvent(WiFiEvent_t event) {
   else if (event == ARDUINO_EVENT_WIFI_AP_START) {
     if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID) || !strlen(_config.AP_SSID)) {
       LOG_INF("Wifi AP SSID: %s started, use 'http://%s' to connect", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
-      APstarted = true;
+      _status.apStarted = true;
     }
   }
   else if (event == ARDUINO_EVENT_WIFI_AP_STOP) {
     if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID)) {
       LOG_INF("Wifi AP stopped: %s", _config.AP_SSID);
-      APstarted = false;
+      _status.apStarted = false;
     }
   }
   else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) LOG_INF("Wifi Station IP, use 'http://%s' to connect", WiFi.localIP().toString().c_str()); 
@@ -216,7 +217,7 @@ void WifiConnection::staticPingSuccess(esp_ping_handle_t hdl, void *args) {
 }
 
 void WifiConnection::pingSuccess(esp_ping_handle_t hdl, void *args) {
-  if (!timeSynchronized) getLocalNTP();
+  _delegate.ping(true);
 }
 
 void WifiConnection::staticPingTimeout(esp_ping_handle_t hdl, void *args) {
@@ -224,13 +225,14 @@ void WifiConnection::staticPingTimeout(esp_ping_handle_t hdl, void *args) {
 }
 
 void WifiConnection::pingTimeout(esp_ping_handle_t hdl, void *args) {
-   if (strlen(_config.ST_SSID)) {
+  if (strlen(_config.ST_SSID)) {
     wl_status_t wStat = WiFi.status();
     if (wStat != WL_NO_SSID_AVAIL && wStat != WL_NO_SHIELD) {
       LOG_WRN("Failed to ping gateway, restart wifi ...");
       startWifi();
     }
   }
+  _delegate.ping(false);
 }
 
 void WifiConnection::stopPing() {
@@ -241,34 +243,3 @@ void WifiConnection::stopPing() {
   }
 }
 
-void WifiConnection::showLocalTime(const char* timeSrc) {
-  time_t currEpoch = getEpoch();
-  char timeFormat[20];
-  strftime(timeFormat, sizeof(timeFormat), "%d/%m/%Y %H:%M:%S", localtime(&currEpoch));
-  LOG_INF("Got current time from %s: %s with tz: %s", timeSrc, timeFormat, timezone);
-  timeSynchronized = true;
-}
-
-bool WifiConnection::getLocalNTP() {
-  // get current time from NTP server and apply to ESP32
-  LOG_INF("Using NTP server: %s", ntpServer);
-  configTzTime(timezone, ntpServer);
-  if (getEpoch() > 10000) {
-    showLocalTime("NTP");    
-    return true;
-  }
-  else {
-    LOG_WRN("Not yet synced with NTP");
-    return false;
-  }
-}
-
-void WifiConnection::syncToBrowser(uint32_t browserUTC) {
-  // Synchronize to browser clock if out of sync
-  struct timeval tv;
-  tv.tv_sec = browserUTC;
-  settimeofday(&tv, NULL);
-  setenv("TZ", timezone, 1);
-  tzset();
-  showLocalTime("browser");
-}
