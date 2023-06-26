@@ -9,6 +9,21 @@
 #include "Globals.h"
 #include <HardwareSerial.h>
 
+void copy(camera_fb_t& dest, const camera_fb_t& src) {
+  if (dest.buf == NULL || dest.len < src.len) {
+      if (dest.buf) {
+        free(dest.buf);
+      }
+      dest.buf = (uint8_t*)malloc(src.len);
+  }
+  dest.len = src.len;
+  memcpy(dest.buf, src.buf, src.len);
+  dest.width = src.width;
+  dest.height = src.height;
+  dest.format = src.format;
+  dest.timestamp = src.timestamp;
+}
+
 /**
   CommandControl wires together all the component classes and exposes setup/loop for the Arduino.
 **/
@@ -17,8 +32,8 @@ class CommandControl: IWifiDelegate, ICommandControl {
   public:
     CommandControl() 
     : wifi(network, *this)
-    , camServer(*this)
-    , _lastfb(NULL) {
+    , camServer(*this) {
+      _lastfb.buf = NULL;
     }
 
     void setup() {
@@ -73,11 +88,12 @@ class CommandControl: IWifiDelegate, ICommandControl {
 
     virtual void snapLayer() {
       getFrame();
-      avi.record(getFrame());
+      avi.record(&_lastfb);
     }
 
     virtual void snap() {
-      avi.snap(getFrame());
+      getFrame();
+      avi.snap(&_lastfb);
     }
 
     virtual void end() {
@@ -107,16 +123,13 @@ class CommandControl: IWifiDelegate, ICommandControl {
     AVI avi;
     CamServer camServer;
 
-    camera_fb_t* _lastfb;
+    camera_fb_t _lastfb;
 
-    camera_fb_t* getFrame() {
-      if (_lastfb) {
-        esp_camera_fb_return(_lastfb);
-        _lastfb = NULL;
-      }
-      _lastfb = camera.processFrame();
-      camServer.liveStream(_lastfb);
-      return _lastfb;
+    void getFrame() {
+      camera_fb_t* buff = camera.processFrame();
+      copy(_lastfb, *buff);
+      esp_camera_fb_return(buff);
+      camServer.liveStream(&_lastfb);
     }
 };
 
