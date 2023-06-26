@@ -2,9 +2,6 @@
 #include "Globals.h"
 
 #include <HardwareSerial.h>
-#define LOG_INF Serial.printf
-#define LOG_ERR LOG_INF
-#define LOG_WRN LOG_INF
 
 #define JSON_BUFF_LEN (32 * 1024) // set big enough to hold all file names in a folder
 
@@ -18,7 +15,7 @@ CamServer::CamServer(ICommandControl& commandControl)
 esp_err_t CamServer::indexHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths.jsonBuff[0] = '{';
-  //TODO: App, Network, Runtime Stats
+  //TODO: AppHardware
   ths.jsonBuff[1] = '}';
   ths.jsonBuff[2] = 0;
   httpd_resp_set_type(req, "application/json");
@@ -35,25 +32,6 @@ esp_err_t CamServer::signalHandler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t CamServer::makeSnapHandler(httpd_req_t* req) {
-  CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.snap();
-  return getSnapHandler(req);
-}
-
-esp_err_t CamServer::getSnapHandler(httpd_req_t* req) {
-  CamServer& ths = *(CamServer*)req->user_ctx;
-  if (!ths._lastfb)
-  {
-      log_e("Camera capture failed");
-      httpd_resp_send_500(req);
-      return ESP_FAIL;
-  }
-  httpd_resp_set_type(req, "image/jpeg");
-  esp_err_t res = httpd_resp_send(req, (const char *)ths._lastfb->buf, ths._lastfb->len);
-  return res;
-}
-
 esp_err_t CamServer::beginHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths._commandControl.begin();
@@ -63,9 +41,9 @@ esp_err_t CamServer::beginHandler(httpd_req_t* req) {
   return ESP_OK;
 }
 
-esp_err_t CamServer::layerHandler(httpd_req_t* req) {
+esp_err_t CamServer::frameHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.snapLayer();
+  ths._commandControl.frame();
   httpd_resp_set_type(req, "application/json");
   ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
@@ -81,6 +59,26 @@ esp_err_t CamServer::endHandler(httpd_req_t* req) {
   return ESP_OK;
 }
 
+esp_err_t CamServer::makePhotoHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  ths._commandControl.photo();
+  return photoHandler(req);
+}
+
+esp_err_t CamServer::photoHandler(httpd_req_t* req) {
+  CamServer& ths = *(CamServer*)req->user_ctx;
+  if (!ths._lastfb)
+  {
+      log_e("Camera capture failed");
+      httpd_resp_send_500(req);
+      return ESP_FAIL;
+  }
+  httpd_resp_set_type(req, "image/jpeg");
+  //TODO: lower image quality for this preview
+  esp_err_t res = httpd_resp_send(req, (const char *)ths._lastfb->buf, ths._lastfb->len);
+  return res;
+}
+
 #define MAX_CLIENTS 2 // allowing too many concurrent web clients can cause errors
 
 void CamServer::setup() {
@@ -92,26 +90,24 @@ void CamServer::setup() {
   config.ctrl_port = WEB_PORT; 
   config.lru_purge_enable = true;
   httpd_uri_t indexUri = {.uri = "/", .method = HTTP_GET, .handler = indexHandler, .user_ctx = this};
-  httpd_uri_t getSnapUri = {.uri = "/snap", .method = HTTP_GET, .handler = getSnapHandler, .user_ctx = this};
-  httpd_uri_t makeSnapUri = {.uri = "/snap", .method = HTTP_PUT, .handler = makeSnapHandler, .user_ctx = this};
   httpd_uri_t beginUri = {.uri = "/begin", .method = HTTP_GET, .handler = beginHandler, .user_ctx = this};
-  httpd_uri_t layerUri = {.uri = "/layer", .method = HTTP_GET, .handler = layerHandler, .user_ctx = this};
+  httpd_uri_t frameUri = {.uri = "/frame", .method = HTTP_GET, .handler = frameHandler, .user_ctx = this};
   httpd_uri_t endUri = {.uri = "/end", .method = HTTP_GET, .handler = endHandler, .user_ctx = this};
   httpd_uri_t signalUri = {.uri = "/signal", .method = HTTP_GET, .handler = signalHandler, .user_ctx = this};
-
+  httpd_uri_t makePhotoUri = {.uri = "/photo", .method = HTTP_PUT, .handler = makePhotoHandler, .user_ctx = this};
+  httpd_uri_t photoUri = {.uri = "/photo", .method = HTTP_GET, .handler = photoHandler, .user_ctx = this};
+  //TODO: live stream frames as they come in
+  //TODO: Serve file listing and files
+ 
   config.max_open_sockets = MAX_CLIENTS; 
   if (httpd_start(&httpServer, &config) == ESP_OK) {
     httpd_register_uri_handler(httpServer, &indexUri);
-    httpd_register_uri_handler(httpServer, &getSnapUri);
-    httpd_register_uri_handler(httpServer, &makeSnapUri);
-    httpd_register_uri_handler(httpServer, &beginUri);
-    httpd_register_uri_handler(httpServer, &layerUri);
-    httpd_register_uri_handler(httpServer, &endUri);
     httpd_register_uri_handler(httpServer, &signalUri);
-    LOG_INF("Starting web server on port: %u", config.server_port);
-  } 
-  else {
-    LOG_ERR("Failed to start web server");
+    httpd_register_uri_handler(httpServer, &beginUri);
+    httpd_register_uri_handler(httpServer, &frameUri);
+    httpd_register_uri_handler(httpServer, &endUri);
+    httpd_register_uri_handler(httpServer, &photoUri);
+    httpd_register_uri_handler(httpServer, &makePhotoUri);
   }
 }
 

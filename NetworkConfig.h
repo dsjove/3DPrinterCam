@@ -11,7 +11,7 @@ class NetworkConfig {
     NetworkConfig();
 
   //TODO: make configurable from file
-  //TODO: allow multiple connections for retries
+  //TODO: allow multiple connection definitions for retries
 
     char hostName[32] = ""; // Default Host name
     char ST_SSID[32]  = ""; //Default router ssid
@@ -31,9 +31,4 @@ class NetworkConfig {
     const char AP_ip[16]  = ""; //Leave blank to use 192.168.4.1
     const char AP_sn[16]  = "";
     const char AP_gw[16]  = "";
-
-    String toString();
-
-  private:
-    String _description;
 };

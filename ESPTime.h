@@ -4,6 +4,7 @@
 
 class ESPTime {
   public:
+    //TODO: refactor to be less static and have an event for time sync
     static void syncToBrowser(uint32_t browserUTC);
     static bool getLocalNTP();
     static void showLocalTime(const char* timeSrc);

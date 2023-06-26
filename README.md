@@ -8,10 +8,10 @@ The ESP32-CAM is a very capable self-contained Arduino WIFI-enabled camera. The 
 The MK4 does not provide power from its USB-C port. If your printer will not supply 5V then you will need a USB Y Cable designed to supply supplimental power from the extra plug. There may be other ways to pull the power from the MK4 board.
 
 You will need to modify your printer slicer settings so the printer can command the camera. There may be ideal GCODE pause commands.
-- `M118 snapbegin` to begin gcode
-- `M118 snaplayer` to layer change gcode
-- `M118 snapend` to end gcode before finalize
-- `M118 snappic` to end gcode after finalize
+- `M118 cam_begin` to begin gcode
+- `M118 cam_frame` to layer change gcode
+- `M118 cam_end` to end gcode before finalize
+- `M118 cam_photo` to end gcode after finalize
 
 You will need to copy MyConfig.hh to MyConfig.h and make any hardware declaration changes you need.
 

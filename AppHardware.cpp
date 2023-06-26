@@ -12,17 +12,15 @@ AppHardware::AppHardware()
 , totalBytes(0) {
 }
 
-//TODO: cache json representation
-
-String AppHardware::toString() {
+String AppHardware::toJson() {
   static char buffer[256] = {0};
-  //TODO: more descriptive
-  if (_description.length() == 0) {
+  //TODO: real JSON
+  if (_json.length() == 0) {
     sprintf(buffer, "%s:%s %s:%s %s:%d:%d", 
       appName.c_str(), appVersion.c_str(),
       cameraBoard.c_str(), cameraModel.c_str(), 
       storageType.c_str(), physicalSize, totalBytes);
-    _description = buffer;
+    _json = buffer;
   }
-  return _description;
+  return _json;
 }

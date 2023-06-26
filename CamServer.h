@@ -4,12 +4,13 @@
 
 class ICommandControl {
   public:
-    virtual void begin() = 0;
-    virtual void snapLayer() = 0;
-    virtual void end() = 0;
-    virtual void snap() = 0;
     virtual void signal() = 0;
-    virtual void light(bool on) = 0;
+    virtual void begin() = 0;
+    virtual void frame() = 0;
+    virtual void end() = 0;
+    virtual void photo() = 0;
+    //TODO: Light
+    //TODO: Stats
 };
 
 /**
@@ -31,9 +32,9 @@ class CamServer {
 
     static esp_err_t indexHandler(httpd_req_t* req);
     static esp_err_t signalHandler(httpd_req_t* req);
-    static esp_err_t getSnapHandler(httpd_req_t* req);
-    static esp_err_t makeSnapHandler(httpd_req_t* req);
     static esp_err_t beginHandler(httpd_req_t* req);
-    static esp_err_t layerHandler(httpd_req_t* req);
+    static esp_err_t frameHandler(httpd_req_t* req);
     static esp_err_t endHandler(httpd_req_t* req);
+    static esp_err_t makePhotoHandler(httpd_req_t* req);
+    static esp_err_t photoHandler(httpd_req_t* req);
 };

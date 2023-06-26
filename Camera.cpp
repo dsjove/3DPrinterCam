@@ -123,10 +123,9 @@ void Camera::initCam(camera_config_t& config, AppHardware& hardware) {
 void Camera::led(double intensity) { 
 #if defined(LED_GPIO_NUM)
 #if CONFIG_LED_ILLUMINATOR_ENABLED
-    ledcWrite(LED_LEDC_CHANNEL, (int)(intensity * 255.0));
-    //ledc_set_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL, duty);
-    //ledc_update_duty(CONFIG_LED_LEDC_SPEED_MODE, CONFIG_LED_LEDC_CHANNEL);
-    //log_i("Set LED intensity to %d", duty);
+    //TODO:  always appears full brightness
+    uint32_t duty = (intensity * 255.0);
+    ledcWrite(LED_LEDC_CHANNEL, duty);
 #endif
 #endif
 }

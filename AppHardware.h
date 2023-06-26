@@ -18,8 +18,8 @@ class AppHardware {
     uint64_t physicalSize;
     uint64_t totalBytes;
 
-    String toString();
+    String toJson();
 
   private:
-    String _description;
+    String _json;
 };

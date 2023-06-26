@@ -2,6 +2,7 @@
 #include "NetworkConfig.h"
 #include "Globals.h"
 
+//TODO: remove logging and add to stats and delegate
 #include <HardwareSerial.h>
 #define LOG_INF Serial.printf
 #define LOG_ERR LOG_INF

@@ -6,7 +6,6 @@
 Generate AVI format for recorded videos
 s60sc 2020, 2022
 */
-
 /* AVI file format:
 header:
  310 bytes
@@ -219,28 +218,30 @@ void AVI::setup(framesize_t frameSize) {
 #define LASTJPG "/last.jpg"
 
 void AVI::open() {
+  //TODO: auto close on open
   //if (frameCntTL > 0) {
   //  close();
- // }
+  //}
   memcpy(aviHeader, aviHeaderTemplate, AVI_HEADER_LEN);
   if (SD_MMC.exists(TLTEMP)) SD_MMC.remove(TLTEMP);
   tlFile = SD_MMC.open(TLTEMP, FILE_WRITE);
   tlFile.write(aviHeader, AVI_HEADER_LEN); // space for header
   prepAviIndex();
   frameCntTL = 1;
+  _status.aviStart = ESPTime::getEpoch();
 }
 
-bool AVI::snap(camera_fb_t* fb) {
+bool AVI::photo(camera_fb_t* fb) {
   if (!fb) return false;
   if (SD_MMC.exists(LASTJPG)) SD_MMC.remove(LASTJPG);
   last = SD_MMC.open(LASTJPG, FILE_WRITE);
   last.write(fb->buf, fb->len);
   last.close();
+  _status.lastSnap = ESPTime::getEpoch();
   return true;
 }
 
 bool AVI::record(camera_fb_t* fb) {
-  //TODO if snap only 
   if (!fb) return false;
   if (frameCntTL == 0) {   
     open();
@@ -255,9 +256,10 @@ bool AVI::record(camera_fb_t* fb) {
   tlFile.write(fb->buf, jpegSize);
   buildAviIdx(jpegSize, true); // save avi index for frame
 
-  AVI::snap(fb);
+  AVI::photo(fb);
 
   frameCntTL++;
+  _status.aviFrameCoount++;
   if (frameCntTL > maxFrames) {
     //close(); //TODO: why is this being executed when not true!!!!
   }
@@ -265,6 +267,12 @@ bool AVI::record(camera_fb_t* fb) {
 
 void AVI::detectIdle() {
   //TODO: close AVI file if no record after a certain amount of time
+/*  if (_status.aviStart > 0 && _status.aviEnd) {
+    time_t time = ESPTime::getEpoch();
+    if ((time - _status.lastSnap) > 60 * 5) {
+      close();
+    }
+  }*/
 }
 
 bool AVI::close() {
@@ -274,8 +282,10 @@ bool AVI::close() {
   if (frameCntTL == 1) {
     SD_MMC.remove(TLTEMP);
     frameCntTL = 0;
+    _status.aviEnd = _status.aviStart = _status.aviFrameCoount = 0;
     return true;
   }
+  _status.aviEnd = ESPTime::getEpoch();
   Serial.println("closing");
   buildAviHdr(tlPlaybackFPS, fsizePtr, --frameCntTL);
   // add index

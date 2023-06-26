@@ -40,37 +40,36 @@ class CommandControl: IWifiDelegate, ICommandControl {
       Serial.begin(115200);
       Serial.setDebugOutput(true);
       storage.setup(hardware);
-      //TODO: Config File
       camera.setup(hardware);
-      Serial.println(hardware.toString());
+      Serial.println(hardware.toJson());
       wifi.setup();
-      Serial.println(network.toString());
       avi.setup(camera.frameSize());
       camServer.setup();
-      // TODO: wait until time set
+      // TODO: wait until time set before get frame
       getFrame();
       signal();
     }
 
     void loop() {
       if (Serial.available()) {
-        //TODO: is this the best way to parse the commands?
+        //TODO: This does not work with a real printer!
+        //TODO: is this thread save with CamServer?
         String command = Serial.readStringUntil('\n');
-        if (command.indexOf("snapbegin") != -1) {
-          Serial.println("snapbegin");
+        if (command.indexOf("cam_begin") != -1) {
+          Serial.println("cam_begin");
           begin();
         }
-        else if (command.indexOf("snaplayer") != -1) {
-          Serial.println("snaplayer");
-          snapLayer();
+        else if (command.indexOf("cam_frame") != -1) {
+          Serial.println("cam_frame");
+          frame();
         }
-        else if (command.indexOf("snappic") != -1) {
-          Serial.println("snappic");
-          snap();
-        }
-        else if (command.indexOf("snapend") != -1) {
-          Serial.println("snapend");
+        else if (command.indexOf("cam_end") != -1) {
+          Serial.println("cam_end");
           end();
+        }
+        else if (command.indexOf("cam_photo") != -1) {
+          Serial.println("cam_photo");
+          photo();
         }
       }
     }
@@ -80,24 +79,6 @@ class CommandControl: IWifiDelegate, ICommandControl {
         ESPTime::getLocalNTP();
       }
       avi.detectIdle();
-    }
-
-    virtual void begin() {
-      avi.open();
-    }
-
-    virtual void snapLayer() {
-      getFrame();
-      avi.record(&_lastfb);
-    }
-
-    virtual void snap() {
-      getFrame();
-      avi.snap(&_lastfb);
-    }
-
-    virtual void end() {
-      avi.close();
     }
 
     virtual void signal() {
@@ -110,8 +91,22 @@ class CommandControl: IWifiDelegate, ICommandControl {
       camera.led(0.0);
     }
 
-    virtual void light(bool on) {
-      camera.led(on ? 1.0 : 0.0);
+    virtual void begin() {
+      avi.open();
+    }
+
+    virtual void frame() {
+      getFrame();
+      avi.record(&_lastfb);
+    }
+
+    virtual void end() {
+      avi.close();
+    }
+
+    virtual void photo() {
+      getFrame();
+      avi.photo(&_lastfb);
     }
 
   private:

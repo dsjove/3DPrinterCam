@@ -20,9 +20,9 @@ class AVI {
     void setup(framesize_t frameSize);
     AVIStatus status() const { return _status; }
     void open();
-    bool snap(camera_fb_t* fb);
     bool record(camera_fb_t* fb);
     bool close();
+    bool photo(camera_fb_t* fb);
     void detectIdle();
 
   private:
