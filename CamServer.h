@@ -30,9 +30,10 @@ class CamServer {
     camera_fb_t* _lastfb = NULL;
 
     static esp_err_t indexHandler(httpd_req_t* req);
+    static esp_err_t signalHandler(httpd_req_t* req);
     static esp_err_t getSnapHandler(httpd_req_t* req);
     static esp_err_t makeSnapHandler(httpd_req_t* req);
     static esp_err_t beginHandler(httpd_req_t* req);
+    static esp_err_t layerHandler(httpd_req_t* req);
     static esp_err_t endHandler(httpd_req_t* req);
-    static esp_err_t signalHandler(httpd_req_t* req);
 };

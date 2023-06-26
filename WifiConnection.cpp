@@ -78,20 +78,23 @@ void WifiConnection::startWifi() {
       Serial.flush();
     }
   }
-  if (wlStat == WL_NO_SSID_AVAIL || _config.allowAP) {
-    setWifiAP(); // AP allowed if no Station SSID eg on first time use 
+  if (wlStat == WL_CONNECTED) {
+    // show stats of requested SSID
+    int numNetworks = WiFi.scanNetworks();
+    for (int i=0; i < numNetworks; i++) {
+      if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID)) {
+        LOG_INF("\nWifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u\n",  WiFi.SSID(i), WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
+        break;
+      }
+    }
   }
-  if (wlStat != WL_CONNECTED) {
+  else {
     LOG_WRN("SSID '%s' %s", _config.ST_SSID, wifiStatusStr(wlStat));
+    if (_config.allowAP) {
+      setWifiAP(); // AP allowed if no Station SSID eg on first time use 
+    }
   }
-  setupMdnsHost(); // not on ESP32 as uses 6k of heap
-  // show stats of requested SSID
-  int numNetworks = WiFi.scanNetworks();
-  LOG_WRN("Found '%d' networks", numNetworks);
-  for (int i=0; i < numNetworks; i++) {
-    //if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID))
-      LOG_INF("Wifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u",  WiFi.SSID(i), WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
-  }
+  setupMdnsHost();
   _status.wifiStarted = wlStat == WL_CONNECTED ? true : false;
   startPing();
 }
@@ -164,7 +167,7 @@ void WifiConnection::onWiFiEvent(WiFiEvent_t event) {
   else if (event == ARDUINO_EVENT_WIFI_STA_STOP) LOG_INF("Wifi Station stopped %s", _config.ST_SSID);
   else if (event == ARDUINO_EVENT_WIFI_AP_START) {
     if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID) || !strlen(_config.AP_SSID)) {
-      LOG_INF("Wifi AP SSID: %s started, use 'http://%s' to connect", WiFi.softAPSSID().c_str(), WiFi.softAPIP().toString().c_str());
+      LOG_INF("Wifi AP SSID: %s started, use 'http://%s' to connect", _config.AP_SSID, WiFi.softAPIP().toString().c_str());
       _status.apStarted = true;
     }
   }
