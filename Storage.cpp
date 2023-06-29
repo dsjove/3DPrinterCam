@@ -1,7 +1,9 @@
 #include "Storage.h"
 #include "AppHardware.h"
-#include "Globals.h"
+#include "Hardware.h"
 #include <SD_MMC.h>
+
+#define ONEMEG (1024 * 1024)
 
 Storage::Storage() {
 }

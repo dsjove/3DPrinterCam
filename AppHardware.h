@@ -2,7 +2,7 @@
 #include <WString.h>
 
 /**
-  Compile time and Setup time constants.
+  Compile-time and Setup-time constants.
 **/
 
 class AppHardware {

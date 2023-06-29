@@ -1,5 +1,5 @@
 #include "NetworkConfig.h"
-#include "Globals.h"
+#include "Hardware.h"
 #include <Esp.h>
 
 NetworkConfig::NetworkConfig() { 

@@ -2,16 +2,7 @@
 #include "esp_http_server.h"
 #include "esp_camera.h"
 
-class ICommandControl {
-  public:
-    virtual void signal() = 0;
-    virtual void begin() = 0;
-    virtual void frame() = 0;
-    virtual void end() = 0;
-    virtual void photo() = 0;
-    //TODO: Light
-    //TODO: Stats
-};
+class ICommandControl;
 
 /**
   Basic webserver that provides url-based invocation of commands.

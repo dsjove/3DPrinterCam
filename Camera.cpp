@@ -1,8 +1,23 @@
 #include "Camera.h"
 #include "AppHardware.h"
-#include "Globals.h"
+#include "Hardware.h"
 #include <exception>
 #include <HardwareSerial.h>
+
+void copy(camera_fb_t& dest, const camera_fb_t& src) {
+  if (dest.buf == NULL || dest.len < src.len) {
+      if (dest.buf) {
+        free(dest.buf);
+      }
+      dest.buf = (uint8_t*)malloc(src.len);
+  }
+  dest.len = src.len;
+  memcpy(dest.buf, src.buf, src.len);
+  dest.width = src.width;
+  dest.height = src.height;
+  dest.format = src.format;
+  dest.timestamp = src.timestamp;
+}
 
 Camera::Camera() {
 }

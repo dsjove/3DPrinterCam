@@ -1,5 +1,5 @@
 #include "AppHardware.h"
-#include "Globals.h"
+#include "Hardware.h"
 #include <string>
 
 AppHardware::AppHardware()

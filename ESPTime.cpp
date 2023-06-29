@@ -6,7 +6,7 @@
 #include "WifiConnection.h"
 #include "NetworkConfig.h"
 #include "ESPTime.h"
-#include "Globals.h"
+#include "Hardware.h"
 
 #include <HardwareSerial.h>
 
@@ -23,7 +23,7 @@ bool ESPTime::getLocalNTP() {
     showLocalTime("NTP");    
     return true;
   }
-  //LOG_WRN("Not yet synced with NTP");
+  log_i("Not yet synced with NTP");
   return false;
 }
 
@@ -41,7 +41,7 @@ void ESPTime::showLocalTime(const char* timeSrc) {
   time_t currEpoch = getEpoch();
   char timeFormat[20];
   strftime(timeFormat, sizeof(timeFormat), "%d/%m/%Y %H:%M:%S", localtime(&currEpoch));
-  //LOG_INF("Got current time from %s: %s with tz: %s", timeSrc, timeFormat, timezone);
+  log_i("Got current time from %s: %s with tz: %s", timeSrc, timeFormat, timezone);
   timeSynchronized = true;
 }
 

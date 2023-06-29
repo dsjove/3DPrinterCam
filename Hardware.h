@@ -29,5 +29,3 @@
 #endif
 
 #include "camera_pins.h"
-
-#define ONEMEG (1024 * 1024)

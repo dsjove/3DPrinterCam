@@ -1,5 +1,6 @@
 #include "CamServer.h"
-#include "Globals.h"
+#include "ICommandControl.h"
+#include "Hardware.h"
 
 #include <HardwareSerial.h>
 
@@ -69,7 +70,6 @@ esp_err_t CamServer::photoHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   if (!ths._lastfb)
   {
-      log_e("Camera capture failed");
       httpd_resp_send_500(req);
       return ESP_FAIL;
   }

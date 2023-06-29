@@ -1,5 +1,5 @@
 #include "AVI.h"
-#include "Globals.h"
+#include "Hardware.h"
 #include "ESPTime.h"
 
 /* 
@@ -215,7 +215,6 @@ void AVI::setup(framesize_t frameSize) {
 }
 
 #define TLTEMP "/current.tl"
-#define LASTJPG "/last.jpg"
 
 void AVI::open() {
   //TODO: auto close on open
@@ -229,16 +228,6 @@ void AVI::open() {
   prepAviIndex();
   frameCntTL = 1;
   _status.aviStart = ESPTime::getEpoch();
-}
-
-bool AVI::photo(camera_fb_t* fb) {
-  if (!fb) return false;
-  if (SD_MMC.exists(LASTJPG)) SD_MMC.remove(LASTJPG);
-  last = SD_MMC.open(LASTJPG, FILE_WRITE);
-  last.write(fb->buf, fb->len);
-  last.close();
-  _status.lastSnap = ESPTime::getEpoch();
-  return true;
 }
 
 bool AVI::record(camera_fb_t* fb) {
@@ -255,8 +244,6 @@ bool AVI::record(camera_fb_t* fb) {
   tlFile.write(hdrBuff, CHUNK_HDR); // jpeg frame details
   tlFile.write(fb->buf, jpegSize);
   buildAviIdx(jpegSize, true); // save avi index for frame
-
-  AVI::photo(fb);
 
   frameCntTL++;
   _status.aviFrameCoount++;
@@ -286,7 +273,6 @@ bool AVI::close() {
     return true;
   }
   _status.aviEnd = ESPTime::getEpoch();
-  Serial.println("closing");
   buildAviHdr(tlPlaybackFPS, fsizePtr, --frameCntTL);
   // add index
   finalizeAviIndex(frameCntTL);

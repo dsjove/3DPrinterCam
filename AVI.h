@@ -11,7 +11,7 @@ struct AVIStatus {
   time_t aviStart = 0;
   time_t aviEnd = 0;
   int aviFrameCoount = 0;
-  time_t lastSnap = 0;
+  time_t lastFrame = 0;
 };
 
 class AVI {
@@ -22,7 +22,6 @@ class AVI {
     void open();
     bool record(camera_fb_t* fb);
     bool close();
-    bool photo(camera_fb_t* fb);
     void detectIdle();
 
   private:
@@ -53,7 +52,6 @@ class AVI {
     uint8_t fsizePtr = 0; // index to frameData[] for record
     int frameCntTL = 0;
     File tlFile;
-    File last;
     uint8_t FPS = 0;
 
     AVIStatus _status;

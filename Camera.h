@@ -19,3 +19,5 @@ class Camera {
     void assignPins(camera_config_t& config);
     void initCam(camera_config_t& config, AppHardware& hardware);
 };
+
+void copy(camera_fb_t& dest, const camera_fb_t& src);
