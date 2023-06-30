@@ -1,31 +1,12 @@
 #include "WifiConnection.h"
 #include "NetworkConfig.h"
 #include "Hardware.h"
-
-//TODO: this is still a mess
-
-WifiConnection* WifiConnection::singleton = NULL;
+#include <WiFi.h>
+#include "ping/ping_sock.h"
 
 WifiConnection::WifiConnection(const NetworkConfig& config, IWifiDelegate& delegate)
   : _config(config)
   , _delegate(delegate) {
-  singleton = this;
-}
-
-void WifiConnection::setup() {
-    // start wifi station (and wifi AP if allowed or station not defined)
-    WiFi.mode(WIFI_AP_STA);
-    WiFi.persistent(false); // prevent the flash storage WiFi credentials
-    WiFi.setAutoReconnect(false); // Set whether module will attempt to reconnect to an access point in case it is disconnected
-    WiFi.softAPdisconnect(true); // kill rogue AP on startup
-    WiFi.setHostname(_config.hostName);
-    delay(100);
-    WiFi.onEvent(staticWiFiEvent);
-    startWifi();
-}
-
-void WifiConnection::staticWiFiEvent(WiFiEvent_t event) {
-  singleton->onWiFiEvent(event);
 }
 
 static const char* wifiStatusStr(wl_status_t wlStat) {
@@ -57,89 +38,62 @@ static const char* getEncType(int ssidIndex) {
   return "Unknown";
 }
 
-void WifiConnection::startWifi() {
-  setWifiSTA();
-  // connect to Wifi station
-  uint32_t startAttemptTime = millis();
-  // Stop trying on failure timeout, will try to reconnect later by ping
-  wl_status_t wlStat;
-  if (!strlen(_config.ST_SSID)) {
-    wlStat = WL_NO_SSID_AVAIL;
+String WifiStatus::toString() const {
+  String result;
+  result.reserve(64);
+  result.concat('\'');
+  result.concat(ssid);
+  result.concat('\'');
+  if (isAP) {
+    result.concat('*');
   }
-  else {
-    while (
-        wlStat = WiFi.status(), 
-        wlStat != WL_CONNECTED && millis() - startAttemptTime < wifiInitialTimeout) {
-      delay(wifiInitialDelay);
-      Serial.flush();
-    }
-  }
-  if (wlStat == WL_CONNECTED) {
-    // show stats of requested SSID
-    int numNetworks = WiFi.scanNetworks();
-    for (int i=0; i < numNetworks; i++) {
-      if (!strcmp(WiFi.SSID(i).c_str(), _config.ST_SSID)) {
-        log_i("\nWifi stats for %s - signal strength: %d dBm; Encryption: %s; channel: %u\n",  WiFi.SSID(i), WiFi.RSSI(i), getEncType(i), WiFi.channel(i));
-        break;
+  result.concat(": ");
+  result.concat(address);
+  return result;
+}
+
+void WifiConnection::setup() {
+  WiFi.mode(_config.allowAP ? WIFI_AP_STA : WIFI_STA);
+  WiFi.setSleep(false);
+  WiFi.setHostname(_config.hostName);
+  configWifiSTA();
+  configWifiAP();
+
+  startSTA();
+
+  Serial.println(_status.toString());
+}
+
+void WifiConnection::configWifiSTA() {
+  if (strlen(_config.ST_SSID)) {
+    // set station with static ip if provided
+    if (strlen(_config.ST_ip) > 1) {
+      IPAddress _ip, _gw, _sn, _ns1, _ns2;
+      if (!_ip.fromString(_config.ST_ip)) {
+        log_i("Failed to parse IP: %s", _config.ST_ip);
       }
-    }
-  }
-  else {
-    log_i("SSID '%s' %s", _config.ST_SSID, wifiStatusStr(wlStat));
-    if (_config.allowAP) {
-      setWifiAP(); // AP allowed if no Station SSID eg on first time use 
-    }
-  }
-  setupMdnsHost();
-  _status.wifiStarted = wlStat == WL_CONNECTED ? true : false;
-  startPing();
-}
-
-void WifiConnection::setupMdnsHost() { 
-   // not on ESP32 as uses 6k of heap 
-#if CONFIG_IDF_TARGET_ESP32S3
- // set up MDNS service 
-  char mdnsName[15]; // max mdns host name length
-  snprintf(mdnsName, 15, _config.hostName);
-  if (MDNS.begin(mdnsName)) {
-    // Add service to MDNS
-    MDNS.addService("http", "tcp", 80);
-    MDNS.addService("ws", "udp", 83);
-    // MDNS.addService("ftp", "tcp", 21);    
-    log_i("mDNS service: http://%s.local", mdnsName);
-  }
-  else {
-    log_i("mDNS host: %s Failed", mdnsName);
-  }
-#endif
-}
-
-void WifiConnection::setWifiSTA() {
-  // set station with static ip if provided
-  if (strlen(_config.ST_ip) > 1) {
-    IPAddress _ip, _gw, _sn, _ns1, _ns2;
-    if (!_ip.fromString(_config.ST_ip)) {
-      log_i("Failed to parse IP: %s", _config.ST_ip);
-    }
-    else {
-      _ip.fromString(_config.ST_ip);
-      _gw.fromString(_config.ST_gw);
-      _sn.fromString(_config.ST_sn);
-      _ns1.fromString(_config.ST_ns1);
-      _ns2.fromString(_config.ST_ns2);
-      // set static ip
-      WiFi.config(_ip, _gw, _sn, _ns1); // need DNS for SNTP
-      log_i("Wifi Station set static IP");
+      else {
+        _ip.fromString(_config.ST_ip);
+        _gw.fromString(_config.ST_gw);
+        _sn.fromString(_config.ST_sn);
+        _ns1.fromString(_config.ST_ns1);
+        _ns2.fromString(_config.ST_ns2);
+        // set static ip
+        WiFi.config(_ip, _gw, _sn, _ns1); // need DNS for SNTP
+        log_i("Wifi Station set static IP");
+      } 
     } 
-  } 
-  else {
-    log_i("Wifi Station IP from DHCP");
+    else {
+      log_i("Wifi Station IP from DHCP");
+    }
   }
-  WiFi.begin(_config.ST_SSID, _config.ST_Pass);
+  else {
+      log_i("Wifi Station No STA");
+  }
 }
 
-void WifiConnection::setWifiAP() {
-  if (!_status.apStarted) {
+void WifiConnection::configWifiAP() {
+  if (_config.allowAP) {
     // Set access point with static ip if provided
     if (strlen(_config.AP_ip) > 1) {
       //log_i("Set AP static IP :%s, %s, %s", _config.AP_ip, _config.AP_gw, _config.AP_sn);  
@@ -149,96 +103,67 @@ void WifiConnection::setWifiAP() {
       _sn.fromString(_config.AP_sn);
       // set static ip
       WiFi.softAPConfig(_ip, _gw, _sn);
+      log_i("Wifi AP Station set static IP");
     } 
-    //TODO: this is failing
-    _status.apStarted = WiFi.softAP(_config.AP_SSID, _config.AP_Pass);
-  }
-}
-
-void WifiConnection::onWiFiEvent(WiFiEvent_t event) {
-  // callback to report on wifi events
-  if (event == ARDUINO_EVENT_WIFI_READY);
-  else if (event == ARDUINO_EVENT_WIFI_SCAN_DONE);  
-  else if (event == ARDUINO_EVENT_WIFI_STA_START) log_i("Wifi Station started, connecting to: %s", _config.ST_SSID);
-  else if (event == ARDUINO_EVENT_WIFI_STA_STOP) log_i("Wifi Station stopped %s", _config.ST_SSID);
-  else if (event == ARDUINO_EVENT_WIFI_AP_START) {
-    if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID) || !strlen(_config.AP_SSID)) {
-      log_i("Wifi AP SSID: %s started, use 'http://%s' to connect", _config.AP_SSID, WiFi.softAPIP().toString().c_str());
-      _status.apStarted = true;
+    else {
+      log_i("Wifi AP Station IP from DHCP");
     }
   }
-  else if (event == ARDUINO_EVENT_WIFI_AP_STOP) {
-    if (!strcmp(WiFi.softAPSSID().c_str(), _config.AP_SSID)) {
-      log_i("Wifi AP stopped: %s", _config.AP_SSID);
-      _status.apStarted = false;
-    }
+  else {
+      log_i("Wifi Station No AP");
   }
-  else if (event == ARDUINO_EVENT_WIFI_STA_GOT_IP) log_i("Wifi Station IP, use 'http://%s' to connect", WiFi.localIP().toString().c_str()); 
-  else if (event == ARDUINO_EVENT_WIFI_STA_LOST_IP) log_i("Wifi Station lost IP");
-  else if (event == ARDUINO_EVENT_WIFI_AP_STAIPASSIGNED);
-  else if (event == ARDUINO_EVENT_WIFI_STA_CONNECTED) log_i("WiFi Station connection to %s, using hostname: %s", _config.ST_SSID, _config.hostName);
-  else if (event == ARDUINO_EVENT_WIFI_STA_DISCONNECTED) log_i("WiFi Station disconnected");
-  else if (event == ARDUINO_EVENT_WIFI_AP_STACONNECTED) log_i("WiFi AP client connection");
-  else if (event == ARDUINO_EVENT_WIFI_AP_STADISCONNECTED) log_i("WiFi AP client disconnection");
-  else log_i("WiFi Unhandled event %d", event);
 }
 
-void WifiConnection::startPing() {
-  if (pingHandle != NULL) return;
-
-  IPAddress ipAddr = WiFi.gatewayIP();
-  ip_addr_t pingDest; 
-  IP_ADDR4(&pingDest, ipAddr[0], ipAddr[1], ipAddr[2], ipAddr[3]);
-  esp_ping_config_t pingConfig = ESP_PING_DEFAULT_CONFIG();
-  pingConfig.target_addr = pingDest;  
-  pingConfig.count = ESP_PING_COUNT_INFINITE;
-  pingConfig.interval_ms = wifiTimeoutSecs * 1000;
-  pingConfig.timeout_ms = 5000;
-#if CONFIG_IDF_TARGET_ESP32S3
-  pingConfig.task_stack_size = 1024 * 6;
-#else
-  pingConfig.task_stack_size = 1024 * 4;
-#endif
-  pingConfig.task_prio = 1;
-  // set ping task callback functions 
-  esp_ping_callbacks_t cbs;
-  cbs.on_ping_success = staticPingSuccess;
-  cbs.on_ping_timeout = staticPingTimeout;
-  cbs.on_ping_end = NULL; 
-  cbs.cb_args = NULL;
-  esp_ping_new_session(&pingConfig, &cbs, &pingHandle);
-  esp_ping_start(pingHandle);
-  log_i("Started ping monitoring");
-}
-
-void WifiConnection::staticPingSuccess(esp_ping_handle_t hdl, void *args) {
-  singleton->pingSuccess(hdl, args);
-}
-
-void WifiConnection::pingSuccess(esp_ping_handle_t hdl, void *args) {
-  _delegate.ping(true);
-}
-
-void WifiConnection::staticPingTimeout(esp_ping_handle_t hdl, void *args) {
-  singleton->pingTimeout(hdl, args);
-}
-
-void WifiConnection::pingTimeout(esp_ping_handle_t hdl, void *args) {
+void WifiConnection::startSTA() {
   if (strlen(_config.ST_SSID)) {
-    wl_status_t wStat = WiFi.status();
-    if (wStat != WL_NO_SSID_AVAIL && wStat != WL_NO_SHIELD) {
-      log_i("Failed to ping gateway, restart wifi ...");
-      startWifi();
+    _status.ssid = _config.ST_SSID;
+    _status.isAP  = false;
+    Serial.print("WIFI Connecting");
+    WiFi.begin(_config.ST_SSID, _config.ST_Pass);
+    delay(100);
+    if (checkStatus()) {
+      _status.address = WiFi.localIP().toString();
+    }
+    else {
+      log_i("Could not start STA WIFI");
     }
   }
-  _delegate.ping(false);
+  else {
+    startAP();
+  }
 }
 
-void WifiConnection::stopPing() {
-  if (pingHandle != NULL) {
-    esp_ping_stop(pingHandle);
-    esp_ping_delete_session(pingHandle);
-    pingHandle = NULL;
+bool WifiConnection::checkStatus() {
+    wl_status_t wlStat;
+    int i = 0;
+    while ((wlStat = WiFi.status()) != WL_CONNECTED) {
+      if (i > 10) {
+        break;
+      }
+      delay(500);
+      Serial.print(".");
+      i++;
+    }
+    Serial.println();
+    return wlStat == WL_CONNECTED;
+}
+
+void WifiConnection::startAP() {
+  if (_config.allowAP) {
+    Serial.println("WIFI AP Starting...");
+    _status.ssid = _config.AP_SSID;
+    _status.isAP  = true;
+    bool started = WiFi.softAP(_config.AP_SSID, _config.AP_Pass);
+    if (started) {
+      _status.address = strlen(_config.AP_ip) ? _config.AP_ip : "192.168.4.1";
+    }
+    else {
+      _status.address = "";
+      log_i("Could not start AP WIFI");
+    }
+  }
+  else {
+      log_i("WIFI not enabled");
   }
 }
 

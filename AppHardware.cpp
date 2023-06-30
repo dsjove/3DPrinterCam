@@ -12,15 +12,21 @@ AppHardware::AppHardware()
 , totalBytes(0) {
 }
 
-String AppHardware::toJson() {
-  static char buffer[256] = {0};
-  //TODO: real JSON
-  if (_json.length() == 0) {
-    sprintf(buffer, "%s:%s %s:%s %s:%d:%d", 
-      appName.c_str(), appVersion.c_str(),
-      cameraBoard.c_str(), cameraModel.c_str(), 
-      storageType.c_str(), physicalSize, totalBytes);
-    _json = buffer;
-  }
-  return _json;
+String AppHardware::toJson() const {
+  String result;
+  result.reserve(256);
+  result.concat(appName);
+  result.concat(':');
+  result.concat(appVersion);
+  result.concat(' ');
+  result.concat(cameraBoard);
+  result.concat(':');
+  result.concat(cameraModel);
+  result.concat(' ');
+  result.concat(storageType);
+  result.concat(':');
+  result.concat(physicalSize);
+  result.concat(':');
+  result.concat(totalBytes);
+  return result;
 }

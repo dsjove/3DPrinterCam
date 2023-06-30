@@ -6,7 +6,7 @@ class ICommandControl;
 class SerialReader {
   public:
     SerialReader(ICommandControl& commandControl);
-    void setup();
+    void start();
     void loop();
 
   private:

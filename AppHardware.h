@@ -18,8 +18,5 @@ class AppHardware {
     uint64_t physicalSize;
     uint64_t totalBytes;
 
-    String toJson();
-
-  private:
-    String _json;
+    String toJson() const;
 };

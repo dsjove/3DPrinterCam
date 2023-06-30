@@ -13,9 +13,16 @@ SerialReader::SerialReader(ICommandControl& commandControl)
     }) {
 }
 
-void SerialReader::setup() {
-  Serial.begin(115200);
-  Serial.setDebugOutput(true);
+static void vTaskCode(void* pvParameters) {
+  SerialReader* reader = (SerialReader*)pvParameters;
+  while(true) {
+    reader->loop();
+  }
+}
+
+void SerialReader::start() {
+  //TaskHandle_t xHandle = NULL;
+  //BaseType_t result = xTaskCreate(vTaskCode, "SerialReader", 1000, this, 12, &xHandle);
 }
 
 void SerialReader::loop() {

@@ -26,7 +26,7 @@ class NetworkConfig {
 
     // Access point Config Portal SSID and Pass
     const bool allowAP = true; // set to true to allow AP to startup if cannot reconnect to STA (router)
-    const char AP_SSID[32] = "";
+    char AP_SSID[32] = "";
     const char AP_Pass[64] = "";
     const char AP_ip[16]  = ""; //Leave blank to use 192.168.4.1
     const char AP_sn[16]  = "";

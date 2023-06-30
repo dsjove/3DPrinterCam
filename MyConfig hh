@@ -35,6 +35,8 @@
 #define APP_NAME "3DPrinterCam"
 #define APP_VER "0.0.1"
 
+#define SERIALDEBUG true
+
 #define DEFAULT_SSD ""
 #define DEFAULT_SSD_PASS ""
 

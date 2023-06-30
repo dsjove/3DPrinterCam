@@ -23,6 +23,7 @@ Camera::Camera() {
 }
 
 void Camera::setup(AppHardware& hardware) {
+  Serial.println("Configuring Camera...");
   camera_config_t config;
   ::memset(&config, 0, sizeof(config));
   assignPins(config);

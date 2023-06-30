@@ -79,9 +79,9 @@ esp_err_t CamServer::photoHandler(httpd_req_t* req) {
   return res;
 }
 
-#define MAX_CLIENTS 2 // allowing too many concurrent web clients can cause errors
-
 void CamServer::setup() {
+  if (WEB_PORT <= 0) return;
+  Serial.println("CamServer Starting...");
    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 #if CONFIG_IDF_TARGET_ESP32S3
   config.stack_size = 1024 * 8;
@@ -99,7 +99,9 @@ void CamServer::setup() {
   //TODO: live stream frames as they come in
   //TODO: Serve file listing and files
  
-  config.max_open_sockets = MAX_CLIENTS; 
+  // allowing too many concurrent web clients can cause errors
+  config.max_open_sockets = 2; 
+  
   if (httpd_start(&httpServer, &config) == ESP_OK) {
     httpd_register_uri_handler(httpServer, &indexUri);
     httpd_register_uri_handler(httpServer, &signalUri);
