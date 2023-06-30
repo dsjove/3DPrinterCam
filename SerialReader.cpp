@@ -13,7 +13,7 @@ SerialReader::SerialReader(ICommandControl& commandControl)
     }) {
 }
 
-static void vTaskCode(void* pvParameters) {
+void SerialReader::vTaskCode(void* pvParameters) {
   SerialReader* reader = (SerialReader*)pvParameters;
   while(true) {
     reader->loop();
@@ -21,8 +21,8 @@ static void vTaskCode(void* pvParameters) {
 }
 
 void SerialReader::start() {
-  //TaskHandle_t xHandle = NULL;
-  //BaseType_t result = xTaskCreate(vTaskCode, "SerialReader", 1000, this, 12, &xHandle);
+  TaskHandle_t xHandle = NULL;
+  BaseType_t result = xTaskCreate(vTaskCode, "SerialReader", 4 * 1024, this, 12, &xHandle);
 }
 
 void SerialReader::loop() {

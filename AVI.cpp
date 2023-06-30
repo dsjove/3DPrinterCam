@@ -1,6 +1,5 @@
 #include "AVI.h"
 #include "Hardware.h"
-#include "ESPTime.h"
 
 /* 
 Generate AVI format for recorded videos
@@ -214,6 +213,21 @@ void AVI::setup(framesize_t frameSize) {
   //TODO: allow for user adjustable FPS in AVI
 }
 
+time_t getEpoch() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec;
+}
+
+void dateFormat(char* inBuff, size_t inBuffLen, bool isFolder) {
+  time_t currEpoch = getEpoch();
+  if (isFolder) 
+    strftime(inBuff, inBuffLen, "/%Y%m%d", localtime(&currEpoch));
+  else 
+    strftime(inBuff, inBuffLen, "/%Y%m%d/%Y%m%d_%H%M%S", localtime(&currEpoch));
+}
+
+
 #define TLTEMP "/current.tl"
 
 void AVI::open() {
@@ -227,7 +241,7 @@ void AVI::open() {
   tlFile.write(aviHeader, AVI_HEADER_LEN); // space for header
   prepAviIndex();
   frameCntTL = 1;
-  _status.aviStart = ESPTime::getEpoch();
+  _status.aviStart = getEpoch();
 }
 
 bool AVI::record(camera_fb_t* fb) {
@@ -255,7 +269,7 @@ bool AVI::record(camera_fb_t* fb) {
 void AVI::detectIdle() {
   //TODO: close AVI file if no record after a certain amount of time
 /*  if (_status.aviStart > 0 && _status.aviEnd) {
-    time_t time = ESPTime::getEpoch();
+    time_t time = getEpoch();
     if ((time - _status.lastSnap) > 60 * 5) {
       close();
     }
@@ -272,7 +286,7 @@ bool AVI::close() {
     _status.aviEnd = _status.aviStart = _status.aviFrameCoount = 0;
     return true;
   }
-  _status.aviEnd = ESPTime::getEpoch();
+  _status.aviEnd = getEpoch();
   buildAviHdr(tlPlaybackFPS, fsizePtr, --frameCntTL);
   // add index
   finalizeAviIndex(frameCntTL);
@@ -289,9 +303,9 @@ bool AVI::close() {
   #define FILE_NAME_LEN 64
   char partName[FILE_NAME_LEN] = "";
   char TLname[FILE_NAME_LEN] = "";
-  ESPTime::dateFormat(partName, sizeof(partName), true);
+  dateFormat(partName, sizeof(partName), true);
   SD_MMC.mkdir(partName); // make date folder if not present
-  ESPTime::dateFormat(partName, sizeof(partName), false);
+  dateFormat(partName, sizeof(partName), false);
   snprintf(TLname, FILE_NAME_LEN - 1, "%s_%s_%u_%u.%s", partName, frameData[fsizePtr].frameSizeStr, tlPlaybackFPS, frameCntTL, "avi");
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;

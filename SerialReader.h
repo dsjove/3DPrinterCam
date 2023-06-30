@@ -7,9 +7,11 @@ class SerialReader {
   public:
     SerialReader(ICommandControl& commandControl);
     void start();
-    void loop();
 
   private:
+    static void vTaskCode(void* pvParameters);
+    void loop();
+
     struct Command {
       public:
         Command(const String& word);

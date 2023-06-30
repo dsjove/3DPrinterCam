@@ -12,7 +12,7 @@ AppHardware::AppHardware()
 , totalBytes(0) {
 }
 
-String AppHardware::toJson() const {
+String AppHardware::toString() const {
   String result;
   result.reserve(256);
   result.concat(appName);

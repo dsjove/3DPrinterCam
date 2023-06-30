@@ -1,5 +1,4 @@
 #import "Photo.h"
-#include "ESPTime.h"
 
 Photo::Photo() {
 }
@@ -12,6 +11,6 @@ bool Photo::save(camera_fb_t* fb) {
   last = SD_MMC.open(LASTJPG, FILE_WRITE);
   last.write(fb->buf, fb->len);
   last.close();
-  _lastPhoto = ESPTime::getEpoch();
+  //_lastPhoto = ESPTime::getEpoch();
   return true;
 }

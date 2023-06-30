@@ -10,12 +10,15 @@ class NetworkConfig {
   public:
     NetworkConfig();
 
+    const char timezone[64] = "GMT0";
+    const char timeserver[64] = "pool.ntp.org";
+
   //TODO: make configurable from file
   //TODO: allow multiple connection definitions for retries
 
     char hostName[32] = ""; // Default Host name
     char ST_SSID[32]  = ""; //Default router ssid
-    char ST_Pass[64] = ""; //Default router passd
+    char ST_Pass[64] = ""; //Default router pass
 
     // leave following blank for dhcp
     const char ST_ip[16]  = ""; // Static IP

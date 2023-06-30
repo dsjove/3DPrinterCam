@@ -4,9 +4,8 @@
 #include <WiFi.h>
 #include "ping/ping_sock.h"
 
-WifiConnection::WifiConnection(const NetworkConfig& config, IWifiDelegate& delegate)
-  : _config(config)
-  , _delegate(delegate) {
+WifiConnection::WifiConnection(const NetworkConfig& config)
+  : _config(config) {
 }
 
 static const char* wifiStatusStr(wl_status_t wlStat) {
@@ -38,9 +37,18 @@ static const char* getEncType(int ssidIndex) {
   return "Unknown";
 }
 
+void printLocalTime(){
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time 1");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S zone %Z %z ");
+}
+
 String WifiStatus::toString() const {
   String result;
-  result.reserve(64);
+  result.reserve(128);
   result.concat('\'');
   result.concat(ssid);
   result.concat('\'');
@@ -49,6 +57,18 @@ String WifiStatus::toString() const {
   }
   result.concat(": ");
   result.concat(address);
+  result.concat(": ");
+  struct tm timeinfo;
+  if(getLocalTime(&timeinfo)){
+    char time[256];
+    sprintf(time, "%04d/%02d%/%02d %02d:%02d:%02d", 
+      timeinfo.tm_year+1900, timeinfo.tm_mon+1, timeinfo.tm_mday,
+      timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+    result.concat(time);
+  }
+  else {
+    result.concat("No Time");
+  }
   return result;
 }
 
@@ -58,9 +78,8 @@ void WifiConnection::setup() {
   WiFi.setHostname(_config.hostName);
   configWifiSTA();
   configWifiAP();
-
   startSTA();
-
+  getLocalNTP();
   Serial.println(_status.toString());
 }
 
@@ -167,3 +186,13 @@ void WifiConnection::startAP() {
   }
 }
 
+void WifiConnection::getLocalNTP() {
+  configTime(0, 0, _config.timeserver);
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)) {
+    return;
+  }
+  setenv("TZ", _config.timezone, 1);
+  tzset();
+  _status.timeSynchronized = true;
+}

@@ -7,7 +7,6 @@
 #include "NetworkConfig.h"
 #include "WIFIConnection.h"
 #include "CamServer.h"
-#include "ESPTime.h"
 #include "ICommandControl.h"
 #include "Hardware.h"
 
@@ -15,11 +14,11 @@
   CommandControl wires together all the component classes and exposes setup/loop for the Arduino.
 **/
 
-class CommandControl: IWifiDelegate, ICommandControl {
+class CommandControl: ICommandControl {
   public:
     CommandControl() 
     : _serialReader(*this)
-    , _wifi(_network, *this)
+    , _wifi(_network)
     , _camServer(*this)
     , _lastfb() {
       _lastfb.buf = NULL;
@@ -29,22 +28,19 @@ class CommandControl: IWifiDelegate, ICommandControl {
       Serial.begin(115200);
       Serial.setDebugOutput(SERIALDEBUG);
       Serial.println("Setup Begin");
-  
       _storage.setup(_hardware);
       _camera.setup(_hardware);
-      Serial.println(_hardware.toJson());
+      Serial.println(_hardware.toString());
       _avi.setup(_camera.frameSize());
       _wifi.setup();
       _camServer.setup();
       getFrame();
       signal();
-      //_serialReader.start()
+      _serialReader.start();
       Serial.println("Setup Complete");
     }
 
     void loop() {
-      //vTaskDelete(NULL);
-      _serialReader.loop();
     }
 
   private:
@@ -69,9 +65,6 @@ class CommandControl: IWifiDelegate, ICommandControl {
     }
     
     virtual void ping(bool success) {
-      if (success) {
-        ESPTime::getLocalNTP();
-      }
       _avi.detectIdle();
     }
 
