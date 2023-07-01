@@ -3,6 +3,7 @@
 #include "esp_camera.h"
 
 class ICommandControl;
+class AppHardware;
 
 /**
   Basic webserver that provides url-based invocation of commands.
@@ -11,13 +12,13 @@ class ICommandControl;
 
 class CamServer {
   public:
-    CamServer(ICommandControl& commandControl);
+    CamServer(AppHardware& hardware, ICommandControl& commandControl);
     void setup();
     void liveStream(camera_fb_t* fb);
 
   private:
+    AppHardware& _hardware;
     ICommandControl& _commandControl;
-    char* jsonBuff;
     httpd_handle_t httpServer = NULL; // web server port 
     camera_fb_t* _lastfb = NULL;
 

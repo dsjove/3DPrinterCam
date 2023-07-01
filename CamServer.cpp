@@ -1,26 +1,18 @@
 #include "CamServer.h"
+#include "AppHardware.h"
 #include "ICommandControl.h"
 #include "Hardware.h"
-
 #include <HardwareSerial.h>
 
-#define JSON_BUFF_LEN (32 * 1024) // set big enough to hold all file names in a folder
-
-CamServer::CamServer(ICommandControl& commandControl)
-: _commandControl(commandControl)
-, jsonBuff(psramFound() ? (char*)ps_malloc(JSON_BUFF_LEN) : (char*)malloc(JSON_BUFF_LEN))
-{
-  ::memset(jsonBuff, 0, JSON_BUFF_LEN);
+CamServer::CamServer(AppHardware& hardware, ICommandControl& commandControl)
+: _hardware(hardware)
+, _commandControl(commandControl) {
 }
 
 esp_err_t CamServer::indexHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths.jsonBuff[0] = '{';
-  //TODO: AppHardware and Stats
-  ths.jsonBuff[1] = '}';
-  ths.jsonBuff[2] = 0;
-  httpd_resp_set_type(req, "application/json");
-  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+  httpd_resp_send(req, ths._hardware.toString().c_str(), HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 
@@ -29,9 +21,7 @@ esp_err_t CamServer::signalHandler(httpd_req_t* req) {
   ICommandControl::Command cmd;
   cmd.code = ICommandControl::Signal;
   ths._commandControl.onCommand(cmd);
-  httpd_resp_set_type(req, "application/json");
-  ths.jsonBuff[0] = 0;
-  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_send(req, "", 0);
   return ESP_OK;
 }
 
@@ -40,9 +30,7 @@ esp_err_t CamServer::beginHandler(httpd_req_t* req) {
   ICommandControl::Command cmd;
   cmd.code = ICommandControl::Begin;
   ths._commandControl.onCommand(cmd);
-  httpd_resp_set_type(req, "application/json");
-  ths.jsonBuff[0] = 0;
-  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_send(req, "", 0);
   return ESP_OK;
 }
 
@@ -51,9 +39,7 @@ esp_err_t CamServer::frameHandler(httpd_req_t* req) {
   ICommandControl::Command cmd;
   cmd.code = ICommandControl::Frame;
   ths._commandControl.onCommand(cmd);
-  httpd_resp_set_type(req, "application/json");
-  ths.jsonBuff[0] = 0;
-  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_send(req, "", 0);
   return ESP_OK;
 }
 
@@ -62,9 +48,7 @@ esp_err_t CamServer::endHandler(httpd_req_t* req) {
   ICommandControl::Command cmd;
   cmd.code = ICommandControl::End;
   ths._commandControl.onCommand(cmd);
-  httpd_resp_set_type(req, "application/json");
-  ths.jsonBuff[0] = 0;
-  httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
+  httpd_resp_send(req, "", 0);
   return ESP_OK;
 }
 

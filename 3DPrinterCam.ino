@@ -19,7 +19,7 @@ class CommandControl: ICommandControl {
     CommandControl() 
     : _serialReader(*this)
     , _wifi(_network)
-    , _camServer(*this)
+    , _camServer(_hardware, *this)
     , _lastfb()
     , _commandQueue(xQueueCreate(5, sizeof(ICommandControl::Command))) {
       _lastfb.buf = NULL;
@@ -40,6 +40,10 @@ class CommandControl: ICommandControl {
       signal();
       start();
       _serialReader.start();
+    }
+
+    void loop() {
+      // Tasks created seperately
     }
 
   private:
@@ -75,13 +79,13 @@ class CommandControl: ICommandControl {
     }
 
     static void vTaskCode(void* pvParameters) {
-      CommandControl* reader = (CommandControl*)pvParameters;
+      CommandControl* control = (CommandControl*)pvParameters;
       while(true) {
-        reader->loop();
+        control->queueLoop();
       }
     }
 
-    void loop() {
+    void queueLoop() {
       ICommandControl::Command command;
       if (xQueueReceive(_commandQueue, &command, portMAX_DELAY) == pdPASS) {
         switch (command.code) {
@@ -108,33 +112,84 @@ class CommandControl: ICommandControl {
 
     void begin() {
       log_d("Command Begin");
-      _avi.open();
+      if (_hardware.storageType.isEmpty() == false) {
+        _avi.open();
+      }
     }
 
     void frame() {
       log_d("Command Frame");
       getFrame();
-      _avi.record(&_lastfb);
-      if (_photoOnFrame) {
-        _photo.save(&_lastfb);
+      if (_hardware.storageType.isEmpty() == false) {
+        _avi.record(&_lastfb);
+        if (_photoOnFrame) {
+          _photo.save(&_lastfb);
+        }
       }
     }
 
     void end() {
       log_d("Command End");
-      _avi.close();
+      if (_hardware.storageType.isEmpty() == false) {
+        _avi.close();
+      }
     }
 
     void savePhoto() {
       log_d("Command Dave Photo");
       getFrame();
-      _photo.save(&_lastfb);
+      if (_hardware.storageType.isEmpty() == false) {
+        _photo.save(&_lastfb);
+      }
     }
 
     void flash() {
     }
 };
 
+class SerialDump {
+  public:
+    SerialDump() {
+    }
+
+    void setup() {
+      Serial.begin(115200);
+      Serial.setDebugOutput(false);
+      _storage.setup(_hardware);
+      Serial.println(_hardware.toString());
+      if (SD_MMC.exists("/dump.txt")) SD_MMC.remove("/dump.txt");
+      _file = SD_MMC.open("/dump.txt", FILE_WRITE);
+      uint8_t value = '*';
+      _file.write(&value, 1);
+      _file.flush();
+    }
+
+    void loop() {
+      int count = Serial.available();
+      if (count > 0) {
+        //Serial.println(count);
+        for (int i = 0; i <count; i++) {
+          uint8_t value = Serial.read();
+          //Serial.println(value);
+          _file.write(&value, 1);
+        }
+        _file.flush();
+      }
+    }
+
+  private:
+    Storage _storage;
+    AppHardware _hardware;
+    File _file;
+};
+
 CommandControl commandControl;
-void setup() { commandControl.setup(); }
-void loop() {}
+//SerialDump commandControl;
+
+void setup() { 
+  commandControl.setup(); 
+}
+
+void loop() {
+  commandControl.loop();
+}
