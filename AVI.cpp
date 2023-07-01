@@ -227,26 +227,36 @@ void dateFormat(char* inBuff, size_t inBuffLen, bool isFolder) {
     strftime(inBuff, inBuffLen, "/%Y%m%d/%Y%m%d_%H%M%S", localtime(&currEpoch));
 }
 
-
-#define TLTEMP "/current.tl"
+const char* TLTEMP = "/current.tl";
 
 void AVI::open() {
-  //TODO: auto close on open
-  //if (frameCntTL > 0) {
-  //  close();
-  //}
+  if (frameCntTL == 1) {
+    log_i("Redundant open AVI"); 
+    return;
+  }
+  if (frameCntTL > 1) {
+    log_i("Auto closing AVI"); 
+    close();
+  }
   memcpy(aviHeader, aviHeaderTemplate, AVI_HEADER_LEN);
-  if (SD_MMC.exists(TLTEMP)) SD_MMC.remove(TLTEMP);
+  if (SD_MMC.exists(TLTEMP)) {
+    if (tlFile) tlFile.close();
+    log_i("Deleting unclosable AVI");  
+    SD_MMC.remove(TLTEMP);
+  }
   tlFile = SD_MMC.open(TLTEMP, FILE_WRITE);
   tlFile.write(aviHeader, AVI_HEADER_LEN); // space for header
   prepAviIndex();
   frameCntTL = 1;
+  _status.aviFrameCount = 0;
   _status.aviStart = getEpoch();
+  log_i("AVI Opened");  
 }
 
-bool AVI::record(camera_fb_t* fb) {
-  if (!fb) return false;
-  if (frameCntTL == 0) {   
+void AVI::record(camera_fb_t* fb) {
+  if (!fb) return;
+  if (frameCntTL == 0) { 
+    log_i("Auto open AVI");  
     open();
   }
   uint8_t hdrBuff[CHUNK_HDR];
@@ -260,9 +270,13 @@ bool AVI::record(camera_fb_t* fb) {
   buildAviIdx(jpegSize, true); // save avi index for frame
 
   frameCntTL++;
-  _status.aviFrameCoount++;
-  if (frameCntTL > maxFrames) {
-    //close(); //TODO: why is this being executed when not true!!!!
+  _status.aviFrameCount++;
+  log_i("AVI Frame Added %d", _status.aviFrameCount); 
+
+  if (_status.aviFrameCount > maxFrames) {
+    //TODO: WTF - the above condition is always true!!!
+    //log_i("Closing to large AVI: %d > %d", _status.aviFrameCount, maxFrames); 
+    //close();
   }
 }
 
@@ -276,29 +290,45 @@ void AVI::detectIdle() {
   }*/
 }
 
-bool AVI::close() {
+void AVI::close() {
   if (frameCntTL <= 0) {
-    return true;
+    log_i("No AVI to close");
+    return;
   }
   if (frameCntTL == 1) {
+    log_i("Removing empty AVI");
+    if (tlFile) tlFile.close();
     SD_MMC.remove(TLTEMP);
     frameCntTL = 0;
-    _status.aviEnd = _status.aviStart = _status.aviFrameCoount = 0;
-    return true;
+    _status.aviEnd = _status.aviStart = _status.aviFrameCount = 0;
+    return;
   }
-  _status.aviEnd = getEpoch();
-  buildAviHdr(tlPlaybackFPS, fsizePtr, --frameCntTL);
+  
+  log_i("tl buildAviHdr");
+
+  frameCntTL--; // 1 for open
+  buildAviHdr(tlPlaybackFPS, fsizePtr, frameCntTL);
   // add index
   finalizeAviIndex(frameCntTL);
+
+  
+  log_i("tl writeAviIndex");
+
   size_t idxLen = 0;
   do {
     idxLen = writeAviIndex(iSDbuffer, RAMSIZE);
     tlFile.write(iSDbuffer, idxLen);
   } while (idxLen > 0);
+
+    log_i("tl seeking");
   // add header
   tlFile.seek(0, SeekSet); // start of file
+    log_i("tl writing");
   tlFile.write(aviHeader, AVI_HEADER_LEN);
+    log_i("tl closing");
   tlFile.close(); 
+
+    log_i("tl naming");
 
   #define FILE_NAME_LEN 64
   char partName[FILE_NAME_LEN] = "";
@@ -307,6 +337,11 @@ bool AVI::close() {
   SD_MMC.mkdir(partName); // make date folder if not present
   dateFormat(partName, sizeof(partName), false);
   snprintf(TLname, FILE_NAME_LEN - 1, "%s_%s_%u_%u.%s", partName, frameData[fsizePtr].frameSizeStr, tlPlaybackFPS, frameCntTL, "avi");
+  
+    log_i("Rename");
+
   SD_MMC.rename(TLTEMP, TLname);
   frameCntTL = 0;
+  _status.aviEnd = getEpoch();
+  log_i("Closed AVI '%s'", TLname);
 }

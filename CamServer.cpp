@@ -16,7 +16,7 @@ CamServer::CamServer(ICommandControl& commandControl)
 esp_err_t CamServer::indexHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
   ths.jsonBuff[0] = '{';
-  //TODO: AppHardware
+  //TODO: AppHardware and Stats
   ths.jsonBuff[1] = '}';
   ths.jsonBuff[2] = 0;
   httpd_resp_set_type(req, "application/json");
@@ -26,7 +26,9 @@ esp_err_t CamServer::indexHandler(httpd_req_t* req) {
 
 esp_err_t CamServer::signalHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.signal();
+  ICommandControl::Command cmd;
+  cmd.code = ICommandControl::Signal;
+  ths._commandControl.onCommand(cmd);
   httpd_resp_set_type(req, "application/json");
   ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
@@ -35,7 +37,9 @@ esp_err_t CamServer::signalHandler(httpd_req_t* req) {
 
 esp_err_t CamServer::beginHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.begin();
+  ICommandControl::Command cmd;
+  cmd.code = ICommandControl::Begin;
+  ths._commandControl.onCommand(cmd);
   httpd_resp_set_type(req, "application/json");
   ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
@@ -44,7 +48,9 @@ esp_err_t CamServer::beginHandler(httpd_req_t* req) {
 
 esp_err_t CamServer::frameHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.frame();
+  ICommandControl::Command cmd;
+  cmd.code = ICommandControl::Frame;
+  ths._commandControl.onCommand(cmd);
   httpd_resp_set_type(req, "application/json");
   ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
@@ -53,16 +59,20 @@ esp_err_t CamServer::frameHandler(httpd_req_t* req) {
 
 esp_err_t CamServer::endHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.end();
+  ICommandControl::Command cmd;
+  cmd.code = ICommandControl::End;
+  ths._commandControl.onCommand(cmd);
   httpd_resp_set_type(req, "application/json");
   ths.jsonBuff[0] = 0;
   httpd_resp_send(req, ths.jsonBuff, HTTPD_RESP_USE_STRLEN);
   return ESP_OK;
 }
 
-esp_err_t CamServer::makePhotoHandler(httpd_req_t* req) {
+esp_err_t CamServer::savePhotoHandler(httpd_req_t* req) {
   CamServer& ths = *(CamServer*)req->user_ctx;
-  ths._commandControl.photo();
+  ICommandControl::Command cmd;
+  cmd.code = ICommandControl::SavePhoto;
+  ths._commandControl.onCommand(cmd);
   return photoHandler(req);
 }
 
@@ -83,6 +93,7 @@ void CamServer::setup() {
   if (WEB_PORT <= 0) return;
   Serial.println("CamServer Starting...");
    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+   config.task_priority = tskIDLE_PRIORITY+5;
 #if CONFIG_IDF_TARGET_ESP32S3
   config.stack_size = 1024 * 8;
 #endif  
@@ -94,7 +105,7 @@ void CamServer::setup() {
   httpd_uri_t frameUri = {.uri = "/frame", .method = HTTP_GET, .handler = frameHandler, .user_ctx = this};
   httpd_uri_t endUri = {.uri = "/end", .method = HTTP_GET, .handler = endHandler, .user_ctx = this};
   httpd_uri_t signalUri = {.uri = "/signal", .method = HTTP_GET, .handler = signalHandler, .user_ctx = this};
-  httpd_uri_t makePhotoUri = {.uri = "/photo", .method = HTTP_PUT, .handler = makePhotoHandler, .user_ctx = this};
+  httpd_uri_t savePhotoUri = {.uri = "/photo", .method = HTTP_PUT, .handler = savePhotoHandler, .user_ctx = this};
   httpd_uri_t photoUri = {.uri = "/photo", .method = HTTP_GET, .handler = photoHandler, .user_ctx = this};
   //TODO: live stream frames as they come in
   //TODO: Serve file listing and files
@@ -109,7 +120,7 @@ void CamServer::setup() {
     httpd_register_uri_handler(httpServer, &frameUri);
     httpd_register_uri_handler(httpServer, &endUri);
     httpd_register_uri_handler(httpServer, &photoUri);
-    httpd_register_uri_handler(httpServer, &makePhotoUri);
+    httpd_register_uri_handler(httpServer, &savePhotoUri);
   }
 }
 

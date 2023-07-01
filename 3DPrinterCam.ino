@@ -20,7 +20,8 @@ class CommandControl: ICommandControl {
     : _serialReader(*this)
     , _wifi(_network)
     , _camServer(*this)
-    , _lastfb() {
+    , _lastfb()
+    , _commandQueue(xQueueCreate(5, sizeof(ICommandControl::Command))) {
       _lastfb.buf = NULL;
     }
 
@@ -35,12 +36,10 @@ class CommandControl: ICommandControl {
       _wifi.setup();
       _camServer.setup();
       getFrame();
-      signal();
-      _serialReader.start();
       Serial.println("Setup Complete");
-    }
-
-    void loop() {
+      signal();
+      start();
+      _serialReader.start();
     }
 
   private:
@@ -53,7 +52,8 @@ class CommandControl: ICommandControl {
     WifiConnection _wifi;
     Photo _photo;
     CamServer _camServer;
-    
+
+    const xQueueHandle _commandQueue;
     const bool _photoOnFrame = true;
     camera_fb_t _lastfb;
 
@@ -63,12 +63,40 @@ class CommandControl: ICommandControl {
       esp_camera_fb_return(buff);
       _camServer.liveStream(&_lastfb);
     }
-    
-    virtual void ping(bool success) {
-      _avi.detectIdle();
+
+    virtual void onCommand(Command command) {
+      xQueueSend(_commandQueue, &command, 0);
     }
 
-    virtual void signal() {
+    void start() {
+      TaskHandle_t xHandle = NULL;
+      BaseType_t result = xTaskCreate(
+        vTaskCode, "CommandControl", 4 * 1024, this, tskIDLE_PRIORITY+1, &xHandle);
+    }
+
+    static void vTaskCode(void* pvParameters) {
+      CommandControl* reader = (CommandControl*)pvParameters;
+      while(true) {
+        reader->loop();
+      }
+    }
+
+    void loop() {
+      ICommandControl::Command command;
+      if (xQueueReceive(_commandQueue, &command, portMAX_DELAY) == pdPASS) {
+        switch (command.code) {
+          case ICommandControl::Signal: signal(); break;
+          case ICommandControl::Begin: begin(); break;
+          case ICommandControl::Frame: frame(); break;
+          case ICommandControl::End: end(); break;
+          case ICommandControl::SavePhoto: savePhoto(); break;
+          case ICommandControl::Flash: flash(); break;
+          default: break;
+        }
+      }
+    }
+
+    void signal() {
       _camera.led(0.1);
       delay(125);
       _camera.led(0.0);
@@ -78,12 +106,12 @@ class CommandControl: ICommandControl {
       _camera.led(0.0);
     }
 
-    virtual void begin() {
+    void begin() {
       log_d("Command Begin");
       _avi.open();
     }
 
-    virtual void frame() {
+    void frame() {
       log_d("Command Frame");
       getFrame();
       _avi.record(&_lastfb);
@@ -92,24 +120,21 @@ class CommandControl: ICommandControl {
       }
     }
 
-    virtual void end() {
+    void end() {
       log_d("Command End");
       _avi.close();
     }
 
-    virtual void photo() {
-      log_d("Command Photo");
+    void savePhoto() {
+      log_d("Command Dave Photo");
       getFrame();
       _photo.save(&_lastfb);
+    }
+
+    void flash() {
     }
 };
 
 CommandControl commandControl;
-
-void setup() {
-  commandControl.setup();
-}
-
-void loop() {
-  commandControl.loop();
-}
+void setup() { commandControl.setup(); }
+void loop() {}

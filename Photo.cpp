@@ -3,7 +3,7 @@
 Photo::Photo() {
 }
 
-#define LASTJPG "/last.jpg"
+const char* LASTJPG = "/last.jpg";
 
 bool Photo::save(camera_fb_t* fb) {
   if (!fb) return false;
@@ -12,5 +12,6 @@ bool Photo::save(camera_fb_t* fb) {
   last.write(fb->buf, fb->len);
   last.close();
   //_lastPhoto = ESPTime::getEpoch();
+  log_i("Saved Photo");
   return true;
 }

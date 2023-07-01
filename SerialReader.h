@@ -1,7 +1,6 @@
 #pragma once
+#include "ICommandControl.h"
 #include <WString.h>
-
-class ICommandControl;
 
 class SerialReader {
   public:
@@ -24,7 +23,7 @@ class SerialReader {
     };
 
     ICommandControl& _commandControl;
-    Command _cmds[4];
+    Command _cmds[6];
 
-    int injest(int c);
+    ICommandControl::Code injest(int c);
 };

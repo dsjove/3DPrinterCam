@@ -26,6 +26,6 @@ class CamServer {
     static esp_err_t beginHandler(httpd_req_t* req);
     static esp_err_t frameHandler(httpd_req_t* req);
     static esp_err_t endHandler(httpd_req_t* req);
-    static esp_err_t makePhotoHandler(httpd_req_t* req);
+    static esp_err_t savePhotoHandler(httpd_req_t* req);
     static esp_err_t photoHandler(httpd_req_t* req);
 };

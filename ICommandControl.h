@@ -2,11 +2,20 @@
 
 class ICommandControl {
   public:
-    virtual void signal() = 0;
-    virtual void begin() = 0;
-    virtual void frame() = 0;
-    virtual void end() = 0;
-    virtual void photo() = 0;
-    //TODO: Light
-    //TODO: Stats
+
+  enum Code {
+    Signal,
+    Begin,
+    Frame,
+    End,
+    SavePhoto,
+    Flash,
+  };
+
+  struct Command {
+    Code code = Signal;
+    char info[128] = { 0 };
+  };
+
+    virtual void onCommand(Command command);
 };

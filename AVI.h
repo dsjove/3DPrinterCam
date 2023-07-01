@@ -10,7 +10,7 @@
 struct AVIStatus {
   time_t aviStart = 0;
   time_t aviEnd = 0;
-  int aviFrameCoount = 0;
+  uint32_t aviFrameCount = 0;
   time_t lastFrame = 0;
 };
 
@@ -20,8 +20,8 @@ class AVI {
     void setup(framesize_t frameSize);
     AVIStatus status() const { return _status; }
     void open();
-    bool record(camera_fb_t* fb);
-    bool close();
+    void record(camera_fb_t* fb);
+    void close();
     void detectIdle();
 
   private:
@@ -34,7 +34,7 @@ class AVI {
     };
     IDXs idx;
     const int tlPlaybackFPS = 1;  // rate to playback the timelapse, min 1 
-    const int maxFrames = 20000; // maximum number of frames in video before auto close 
+    const uint32_t maxFrames = 20000; // maximum number of frames in video before auto close 
     const uint32_t SAMPLE_RATE = 16000; // sample rate used
     const bool haveSoundFile = false;
     const size_t audSize = 0;
@@ -50,7 +50,7 @@ class AVI {
     #define AVI_HEADER_LEN 310 // AVI header length
     uint8_t aviHeader[AVI_HEADER_LEN];
     uint8_t fsizePtr = 0; // index to frameData[] for record
-    int frameCntTL = 0;
+    uint32_t frameCntTL = 0;
     File tlFile;
     uint8_t FPS = 0;
 
