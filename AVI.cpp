@@ -1,6 +1,8 @@
 #include "AVI.h"
 #include "Hardware.h"
 
+//TODO: there is a lot of "it just stops working" in here!!!
+
 /* 
 Generate AVI format for recorded videos
 s60sc 2020, 2022

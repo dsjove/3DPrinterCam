@@ -20,11 +20,11 @@ static const char* wifiStatusStr(wl_status_t wlStat) {
     case WL_DISCONNECTED: return "unable to connect";
     default: break;
   }
-  return "Invalid WiFi.status";
+  return "Invalid";
 }
 
-static const char* getEncType(int ssidIndex) {
-  switch (WiFi.encryptionType(ssidIndex)) {
+static const char* getEncType(wifi_auth_mode_t authMode) {
+  switch (authMode) {
     case (WIFI_AUTH_OPEN): return "Open";
     case (WIFI_AUTH_WEP): return "WEP";
     case (WIFI_AUTH_WPA_PSK): return "WPA_PSK";
@@ -35,15 +35,6 @@ static const char* getEncType(int ssidIndex) {
     default: break;
   }
   return "Unknown";
-}
-
-void printLocalTime(){
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time 1");
-    return;
-  }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S zone %Z %z ");
 }
 
 String WifiStatus::toString() const {
@@ -60,7 +51,8 @@ String WifiStatus::toString() const {
   result.concat(": ");
   struct tm timeinfo;
   if(getLocalTime(&timeinfo)){
-    char time[256];
+    char time[32];
+    //TODO: print timezone
     sprintf(time, "%04d/%02d%/%02d %02d:%02d:%02d", 
       timeinfo.tm_year+1900, timeinfo.tm_mon+1, timeinfo.tm_mday,
       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
@@ -85,7 +77,6 @@ void WifiConnection::setup() {
 
 void WifiConnection::configWifiSTA() {
   if (strlen(_config.ST_SSID)) {
-    // set station with static ip if provided
     if (strlen(_config.ST_ip) > 1) {
       IPAddress _ip, _gw, _sn, _ns1, _ns2;
       if (!_ip.fromString(_config.ST_ip)) {
@@ -97,7 +88,6 @@ void WifiConnection::configWifiSTA() {
         _sn.fromString(_config.ST_sn);
         _ns1.fromString(_config.ST_ns1);
         _ns2.fromString(_config.ST_ns2);
-        // set static ip
         WiFi.config(_ip, _gw, _sn, _ns1); // need DNS for SNTP
         log_i("Wifi Station set static IP");
       } 
@@ -113,14 +103,11 @@ void WifiConnection::configWifiSTA() {
 
 void WifiConnection::configWifiAP() {
   if (_config.allowAP) {
-    // Set access point with static ip if provided
     if (strlen(_config.AP_ip) > 1) {
-      //log_i("Set AP static IP :%s, %s, %s", _config.AP_ip, _config.AP_gw, _config.AP_sn);  
       IPAddress _ip, _gw, _sn, _ns1 ,_ns2;
       _ip.fromString(_config.AP_ip);
       _gw.fromString(_config.AP_gw);
       _sn.fromString(_config.AP_sn);
-      // set static ip
       WiFi.softAPConfig(_ip, _gw, _sn);
       log_i("Wifi AP Station set static IP");
     } 
@@ -140,10 +127,11 @@ void WifiConnection::startSTA() {
     Serial.print("WIFI Connecting");
     WiFi.begin(_config.ST_SSID, _config.ST_Pass);
     delay(100);
-    if (checkStatus()) {
+    if (checkSTAStatus()) {
       _status.address = WiFi.localIP().toString();
     }
     else {
+      _status.address = "";
       log_i("Could not start STA WIFI");
     }
   }
@@ -152,9 +140,10 @@ void WifiConnection::startSTA() {
   }
 }
 
-bool WifiConnection::checkStatus() {
+bool WifiConnection::checkSTAStatus() {
     wl_status_t wlStat;
     int i = 0;
+    //TODO: paramterize delay and count
     while ((wlStat = WiFi.status()) != WL_CONNECTED) {
       if (i > 10) {
         break;
@@ -186,6 +175,7 @@ void WifiConnection::startAP() {
   }
 }
 
+//TODO: if failed to get or wifi reconnect, try again
 void WifiConnection::getLocalNTP() {
   configTime(0, 0, _config.timeserver);
   struct tm timeinfo;

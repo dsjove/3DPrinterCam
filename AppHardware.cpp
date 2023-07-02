@@ -10,23 +10,25 @@ AppHardware::AppHardware()
 , storageType()
 , physicalSize(0)
 , totalBytes(0) {
+  _cacheString.reserve(256);
 }
 
-String AppHardware::toString() const {
-  String result;
-  result.reserve(256);
-  result.concat(appName);
-  result.concat(':');
-  result.concat(appVersion);
-  result.concat(' ');
-  result.concat(cameraBoard);
-  result.concat(':');
-  result.concat(cameraModel);
-  result.concat(' ');
-  result.concat(storageType);
-  result.concat(':');
-  result.concat(physicalSize);
-  result.concat(':');
-  result.concat(totalBytes);
-  return result;
+const String& AppHardware::toString() {
+  if (_cacheString.isEmpty() == false) {
+    return _cacheString;
+  }
+  _cacheString.concat(appName);
+  _cacheString.concat(':');
+  _cacheString.concat(appVersion);
+  _cacheString.concat(' ');
+  _cacheString.concat(cameraBoard);
+  _cacheString.concat(':');
+  _cacheString.concat(cameraModel);
+  _cacheString.concat(' ');
+  _cacheString.concat(storageType);
+  _cacheString.concat(':');
+  _cacheString.concat(physicalSize / (1024 * 1024));
+  _cacheString.concat(':');
+  _cacheString.concat(totalBytes / (1024 * 1024));
+  return _cacheString;
 }

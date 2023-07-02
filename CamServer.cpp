@@ -68,7 +68,7 @@ esp_err_t CamServer::photoHandler(httpd_req_t* req) {
       return ESP_FAIL;
   }
   httpd_resp_set_type(req, "image/jpeg");
-  //TODO: lower image quality for this preview
+  //TODO: lower image quality for this preview, chunked?
   esp_err_t res = httpd_resp_send(req, (const char *)ths._lastfb->buf, ths._lastfb->len);
   return res;
 }
@@ -91,8 +91,6 @@ void CamServer::setup() {
   httpd_uri_t signalUri = {.uri = "/signal", .method = HTTP_GET, .handler = signalHandler, .user_ctx = this};
   httpd_uri_t savePhotoUri = {.uri = "/photo", .method = HTTP_PUT, .handler = savePhotoHandler, .user_ctx = this};
   httpd_uri_t photoUri = {.uri = "/photo", .method = HTTP_GET, .handler = photoHandler, .user_ctx = this};
-  //TODO: live stream frames as they come in
-  //TODO: Serve file listing and files
  
   // allowing too many concurrent web clients can cause errors
   config.max_open_sockets = 2; 

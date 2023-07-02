@@ -144,6 +144,7 @@ class CommandControl: ICommandControl {
     }
 
     void flash() {
+      //TODO
     }
 };
 
@@ -157,8 +158,9 @@ class SerialDump {
       Serial.setDebugOutput(false);
       _storage.setup(_hardware);
       Serial.println(_hardware.toString());
-      if (SD_MMC.exists("/dump.txt")) SD_MMC.remove("/dump.txt");
-      _file = SD_MMC.open("/dump.txt", FILE_WRITE);
+      static const char name[] = "/dump.txt";
+      if (SD_MMC.exists(name)) SD_MMC.remove(name);
+      _file = SD_MMC.open(name, FILE_WRITE);
       uint8_t value = '*';
       _file.write(&value, 1);
       _file.flush();
@@ -178,8 +180,8 @@ class SerialDump {
     }
 
   private:
-    Storage _storage;
     AppHardware _hardware;
+    Storage _storage;
     File _file;
 };
 

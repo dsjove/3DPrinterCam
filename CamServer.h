@@ -7,7 +7,9 @@ class AppHardware;
 
 /**
   Basic webserver that provides url-based invocation of commands.
-  TODO: Will serve files.
+  TODO: Serve files
+  TODO: Live stream video
+  TODO: Flash
 **/
 
 class CamServer {

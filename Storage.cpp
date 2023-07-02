@@ -3,8 +3,6 @@
 #include "Hardware.h"
 #include <SD_MMC.h>
 
-#define ONEMEG (1024 * 1024)
-
 Storage::Storage() {
 }
 
@@ -14,7 +12,7 @@ StorageStatus Storage::status() const {
   status.freePSRAM = ESP.getFreePsram();
   status.largestBlock = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
 #ifdef INCLUDE_SD
-    status.freeStorage = SD_MMC.usedBytes() / ONEMEG;
+    status.freeStorage = SD_MMC.usedBytes();
 #endif
   return status;
 }
@@ -59,8 +57,8 @@ void Storage::setup(AppHardware& hardware) {
         hardware.storageType = "SDHC";
         break;
     }
-    hardware.physicalSize = SD_MMC.cardSize() / ONEMEG;
-    hardware.totalBytes = SD_MMC.totalBytes() / ONEMEG;
+    hardware.physicalSize = SD_MMC.cardSize();
+    hardware.totalBytes = SD_MMC.totalBytes();
 #if defined(CAMERA_MODEL_AI_THINKER)
     pinMode(4, OUTPUT);
     digitalWrite(4, 0); // set lamp pin fully off as sd_mmc library still initialises pin 4 in 1 line mode

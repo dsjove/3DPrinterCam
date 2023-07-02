@@ -23,7 +23,7 @@ class SerialReader {
     };
 
     ICommandControl& _commandControl;
-    Command _cmds[6];
+    Command _cmds[ICommandControl::Code::_Size];
 
     ICommandControl::Code injest(int c);
 };

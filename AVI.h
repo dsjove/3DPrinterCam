@@ -14,6 +14,8 @@ struct AVIStatus {
   time_t lastFrame = 0;
 };
 
+//TODO: create live video methds
+
 class AVI {
   public:
     AVI();

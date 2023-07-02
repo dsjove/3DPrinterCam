@@ -18,5 +18,8 @@ class AppHardware {
     uint64_t physicalSize;
     uint64_t totalBytes;
 
-    String toString() const;
+    const String& toString();
+
+private:
+    String _cacheString;
 };

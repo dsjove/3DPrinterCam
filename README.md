@@ -20,7 +20,7 @@ You will need to copy MyConfig.hh to MyConfig.h and make any hardware declaratio
 Much of the code is cribbed from: [ESP32-CAM_MJPEG2SD](https://github.com/s60sc/ESP32-CAM_MJPEG2SD)
 That project does a lot more than what we need and not exactly what we need. Despite being a global-variable mess, it is an excellent source.
 
-I have not yet run an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor and curl/browser. The Serial read code does not cooperate well when the serial bus is flooded with data; needs to be reimplemented.
+I have not yet run an end to end time-lapse. Creating a timelapse is possible using the Arduino IDE Serial Monitor and curl/browser. The cables I have do not appear to send serial data from printer to ESP32 :-(
 
 ## Images
 ![Hardware](Hardware.jpeg)

@@ -34,25 +34,25 @@ void SerialReader::loop() {
     int value = Serial.read();
     ICommandControl::Command cmd;
     cmd.code = injest(value);
-    if (cmd.code != -1) {
+    if (cmd.code != ICommandControl::None) {
       _commandControl.onCommand(cmd);
     }
   }
 }
 
 ICommandControl::Code SerialReader::injest(int c) {
-  if (c <= 0) return (ICommandControl::Code)-1;
-  size_t cmd = -1;
-  for (int o = 0; o < sizeof(_cmds) / sizeof(Command); o++) {
-      bool matched = _cmds[o].match((char)c);
-      if (matched) {
-          for (int o = 0; o < 7; o++) {
-              _cmds[o].consume();
-          }
-          return (ICommandControl::Code)o;
-      }
+  if (c > 0) {
+    for (size_t o = ICommandControl::Code::_First; o < ICommandControl::Code::_Size; o++) {
+        bool matched = _cmds[o].match((char)c);
+        if (matched) {
+            for (size_t o = ICommandControl::Code::_First; o < ICommandControl::Code::_Size; o++) {
+                _cmds[o].consume();
+            }
+            return (ICommandControl::Code)o;
+        }
+    }
   }
-  return (ICommandControl::Code)-1;
+  return ICommandControl::None;
 }
 
 SerialReader::Command::Command(const String& word)

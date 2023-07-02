@@ -7,6 +7,6 @@ class Photo {
     Photo();
     bool save(camera_fb_t* fb);
   private:
-    File last;
+    File _last;
     time_t _lastPhoto = 0;
 };

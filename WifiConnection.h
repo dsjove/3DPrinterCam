@@ -28,8 +28,8 @@ class WifiConnection {
 
     void configWifiSTA();
     void startSTA();
+    bool checkSTAStatus();
     void configWifiAP();
     void startAP();
-    bool checkStatus();
     void getLocalNTP();
 };

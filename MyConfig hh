@@ -39,6 +39,7 @@
 
 #define DEFAULT_SSD ""
 #define DEFAULT_SSD_PASS ""
+#define WEB_PORT 80
 
 // Enable LED FLASH setting
 #define CONFIG_LED_ILLUMINATOR_ENABLED 1
